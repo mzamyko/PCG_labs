@@ -446,8 +446,9 @@ function rgbToHex(r,g,b){
   return '#'+h(r)+h(g)+h(b);
 }
 
+/* =========================================================
    2. СОСТОЯНИЕ
-
+   ========================================================= */
 const state = {
   rgb:{r:255,g:255,b:255},
   cmyk:{c:0,m:0,y:0,k:0},
@@ -467,8 +468,9 @@ function recomputeFromRgb(r,g,b){
 }
 recomputeFromRgb(255,255,255);
 
+/* =========================================================
    3. ПРЕДУПРЕЖДЕНИЯ О ВЫХОДЕ ЗА ГРАНИЦЫ
-
+   ========================================================= */
 let warnTimer=null;
 function showWarning(msg){
   const el=document.getElementById('warning-banner');
@@ -513,7 +515,9 @@ function setFromLabField(name, rawValue){
   renderAll();
 }
 
+/* =========================================================
    5. ОПИСАНИЕ ПАНЕЛЕЙ И ПОСТРОЕНИЕ DOM
+   ========================================================= */
 const MODEL_DEFS = [
   {
     key:'rgb', title:'RGB', subtitle:'аддитивная, экран',
@@ -736,7 +740,9 @@ function buildSimplePalette(p){
   updateMarkers();
 }
 
+/* =========================================================
    6. ОТРИСОВКА (синхронизация всего интерфейса с state)
+   ========================================================= */
 function sliderGradientCss(modelKey, channelName, currentValues, min, max){
   const steps=8;
   const stops=[];
@@ -780,9 +786,12 @@ function renderAll(skipActiveFocus){
   document.getElementById('ro-hex').textContent = hex.toUpperCase();
 }
 
+/* =========================================================
    7. СТАРТ
+   ========================================================= */
 buildPanels();
 buildHeroPalette();
+// стартовый цвет — приятный акцентный, не белый, чтобы сразу было видно все три модели в работе
 recomputeFromRgb(196, 90, 60);
 renderAll();
 </script>
