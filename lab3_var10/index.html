@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Обработка изображений (Горизонтальное сравнение)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .controls {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: inline-block;
+            text-align: left;
+        }
+        .controls label, .controls select, .controls button {
+            margin: 8px;
+            font-size: 14px;
+        }
+        .workflow-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 20px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+        .canvas-box {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            flex: 1;
+            min-width: 300px;
+            max-width: 550px;
+            box-sizing: border-box;
+        }
+        .canvas-box h3 {
+            margin-top: 0;
+            color: #555;
+        }
+        canvas {
+            width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            background-color: #eee;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Обработка изображений</h1>
+
+    <div class="controls">
+        <input type="file" id="upload" accept="image/*"><br>
+        
+        <label for="method">Метод:</label>
+        <select id="method">
+            <option value="grayscale">Оттенки серого (ITU-R BT.601)</option>
+            <option value="otsu">Бинаризация по методу Оцу</option>
+            <option value="iterative">Итеративный порог (Изодата)</option>
+            <option value="adaptive">Адаптивный порог (Гонсалес-Вудс)</option>
+            <option value="median">Медианный фильтр</option>
+            <option value="min">Фильтр минимума</option>
+            <option value="max">Фильтр максимума</option>
+        </select>
+
+        <label><input type="checkbox" id="invert"> Инвертировать</label>
+        <br style="clear: both;">
+        <div style="text-align: center; margin-top: 10px;">
+            <button id="processBtn">Обработать изображение</button>
+        </div>
+    </div>
+
+    <div class="workflow-container">
+        <div class="canvas-box">
+            <h3>Оригинальное изображение</h3>
+            <canvas id="inputCanvas"></canvas>
+        </div>
+        
+        <div class="canvas-box">
+            <h3>Результат обработки</h3>
+            <canvas id="outputCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        /* Преобразует пиксели в оттенки серого по формуле ITU-R BT.601 */
+        function toGrayscale(rgba, w, h) {
+          const gray = new Uint8ClampedArray(w * h);
+          for (let i = 0, p = 0; i < gray.length; i++, p += 4) {
+            gray[i] = 0.299 * rgba[p] + 0.587 * rgba[p + 1] + 0.114 * rgba[p + 2];
+          }
+          return gray;
+        }
+
+        /* Подсчитывает количество пикселей для каждого из 256 уровней яркости */
+        function histogram256(gray) {
+          const hist = new Uint32Array(256);
+          for (let i = 0; i < gray.length; i++) hist[gray[i]]++;
+          return hist;
+        }
+
+        /* Вычисляет оптимальный порог бинаризации методом Оцу */
+        function otsuThreshold(hist) {
+          const total = hist.reduce((a, b) => a + b, 0);
+          let sumAll = 0;
+          for (let i = 0; i < 256; i++) sumAll += i * hist[i];
+
+          let sumB = 0, weightB = 0, best = 0, bestVar = -1;
+          for (let t = 0; t < 256; t++) {
+            weightB += hist[t];
+            if (weightB === 0) continue;
+            const weightF = total - weightB;
+            if (weightF === 0) break;
+            sumB += t * hist[t];
+            const meanB = sumB / weightB;
+            const meanF = (sumAll - sumB) / weightF;
+            const between = weightB * weightF * (meanB - meanF) * (meanB - meanF);
+            if (between > bestVar) { bestVar = between; best = t; }
+          }
+          return best;
+        }
+
+        /* Находит порог бинаризации итеративным методом изодаты */
+        function iterativeThreshold(hist) {
+          let sumAll = 0, total = 0;
+          for (let i = 0; i < 256; i++) { sumAll += i * hist[i]; total += hist[i]; }
+          let T = sumAll / total;
+          let prevT = -1, guard = 0;
+          while (Math.abs(T - prevT) >= 0.5 && guard < 200) {
+            prevT = T;
+            let s1 = 0, c1 = 0, s2 = 0, c2 = 0;
+            for (let i = 0; i < 256; i++) {
+              if (i <= T) { s1 += i * hist[i]; c1 += hist[i]; }
+              else { s2 += i * hist[i]; c2 += hist[i]; }
+            }
+            const m1 = c1 ? s1 / c1 : 0;
+            const m2 = c2 ? s2 / c2 : 0;
+            T = (m1 + m2) / 2;
+            guard++;
+          }
+          return Math.round(T);
+        }
+
+        /* Применяет бинаризацию с фиксированным порогом и возможностью инверсии */
+        function applyFixedThreshold(gray, T, invert) {
+          const out = new Uint8ClampedArray(gray.length);
+          for (let i = 0; i < gray.length; i++) {
+            let isObject = gray[i] <= T;
+            if (invert) isObject = !isObject;
+            out[i] = isObject ? 0 : 255;
+          }
+          return out;
+        }
+
+        /* Выполняет адаптивную бинаризацию на основе скользящего среднего */
+        function adaptiveMovingAverageThreshold(gray, w, h, n, b, invert) {
+          const out = new Uint8ClampedArray(w * h);
+          const buf = new Float64Array(n);
+          let bufIdx = 0, filled = 0, sum = 0;
+          for (let row = 0; row < h; row++) {
+            const leftToRight = (row % 2 === 0);
+            for (let col = 0; col < w; col++) {
+              const x = leftToRight ? col : (w - 1 - col);
+              const idx = row * w + x;
+              const val = gray[idx];
+              if (filled < n) { buf[bufIdx] = val; sum += val; filled++; }
+              else { sum -= buf[bufIdx]; buf[bufIdx] = val; sum += val; }
+              bufIdx = (bufIdx + 1) % n;
+              const m = sum / filled;
+              let isObject = val <= b * m;
+              if (invert) isObject = !isObject;
+              out[idx] = isObject ? 0 : 255;
+            }
+          }
+          return out;
+        }
+
+        /* Применяет медианный фильтр или фильтры минимума и максимума */
+        function orderStatisticFilter(rgba, w, h, windowSize, statType) {
+          const out = new Uint8ClampedArray(rgba.length);
+          const r = Math.floor(windowSize / 2);
+          const winLen = windowSize * windowSize;
+          const bufR = new Uint8ClampedArray(winLen), bufG = new Uint8ClampedArray(winLen), bufB = new Uint8ClampedArray(winLen);
+
+          /* Ограничивает число заданным диапазоном для защиты от выхода за границы массива */
+          function clampi(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+          for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+              let k = 0;
+              for (let dy = -r; dy <= r; dy++) {
+                const yy = clampi(y + dy, 0, h - 1);
+                for (let dx = -r; dx <= r; dx++) {
+                  const xx = clampi(x + dx, 0, w - 1);
+                  const si = (yy * w + xx) * 4;
+                  bufR[k] = rgba[si]; bufG[k] = rgba[si + 1]; bufB[k] = rgba[si + 2];
+                  k++;
+                }
+              }
+              let rv, gv, bv;
+              if (statType === 'median') {
+                const sr = Array.from(bufR).sort((a, b) => a - b);
+                const sg = Array.from(bufG).sort((a, b) => a - b);
+                const sb = Array.from(bufB).sort((a, b) => a - b);
+                const mid = winLen >> 1;
+                rv = sr[mid]; gv = sg[mid]; bv = sb[mid];
+              } else if (statType === 'min') {
+                rv = Math.min.apply(null, bufR); gv = Math.min.apply(null, bufG); bv = Math.min.apply(null, bufB);
+              } else {
+                rv = Math.max.apply(null, bufR); gv = Math.max.apply(null, bufG); bv = Math.max.apply(null, bufB);
+              }
+              const di = (y * w + x) * 4;
+              out[di] = rv; out[di + 1] = gv; out[di + 2] = bv; out[di + 3] = rgba[di + 3];
+            }
+          }
+          return out;
+        }
+
+        /* Инициализирует элементы интерфейса и переменные для работы с холстом */
+        const upload = document.getElementById('upload');
+        const inputCanvas = document.getElementById('inputCanvas');
+        const outputCanvas = document.getElementById('outputCanvas');
+        const ctxIn = inputCanvas.getContext('2d');
+        const ctxOut = outputCanvas.getContext('2d');
+        const processBtn = document.getElementById('processBtn');
+
+        let loadedImage = new Image();
+
+        /* Обработчик выбора файла изображения пользователем */
+        upload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                loadedImage.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+
+        /* Обработчик завершения загрузки изображения в память браузера */
+        loadedImage.onload = function() {
+            inputCanvas.width = loadedImage.width;
+            inputCanvas.height = loadedImage.height;
+            outputCanvas.width = loadedImage.width;
+            outputCanvas.height = loadedImage.height;
+
+            ctxIn.drawImage(loadedImage, 0, 0);
+            ctxOut.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+        }
+
+        /* Обработчик нажатия кнопки для запуска выбранного алгоритма обработки */
+        processBtn.addEventListener('click', () => {
+            if (!loadedImage.src) {
+                alert('Сначала загрузите изображение!');
+                return;
+            }
+
+            const w = inputCanvas.width;
+            const h = inputCanvas.height;
+            const imgData = ctxIn.getImageData(0, 0, w, h);
+            const rgba = imgData.data;
+            const method = document.getElementById('method').value;
+            const invert = document.getElementById('invert').checked;
+
+            const outImgData = ctxOut.createImageData(w, h);
+            const outData = outImgData.data;
+
+            if (method === 'grayscale') {
+                const gray = toGrayscale(rgba, w, h);
+                for (let i = 0, p = 0; i < gray.length; i++, p += 4) {
+                    outData[p] = gray[i];
+                    outData[p+1] = gray[i];
+                    outData[p+2] = gray[i];
+                    outData[p+3] = 255;
+                }
+            } else if (method === 'otsu' || method === 'iterative') {
+                const gray = toGrayscale(rgba, w, h);
+                const hist = histogram256(gray);
+                const T = (method === 'otsu') ? otsuThreshold(hist) : iterativeThreshold(hist);
+                const bin = applyFixedThreshold(gray, T, invert);
+                for (let i = 0, p = 0; i < bin.length; i++, p += 4) {
+                    outData[p] = bin[i];
+                    outData[p+1] = bin[i];
+                    outData[p+2] = bin[i];
+                    outData[p+3] = 255;
+                }
+            } else if (method === 'adaptive') {
+                const gray = toGrayscale(rgba, w, h);
+                const bin = adaptiveMovingAverageThreshold(gray, w, h, 15, 0.9, invert);
+                for (let i = 0, p = 0; i < bin.length; i++, p += 4) {
+                    outData[p] = bin[i];
+                    outData[p+1] = bin[i];
+                    outData[p+2] = bin[i];
+                    outData[p+3] = 255;
+                }
+            } else if (method === 'median' || method === 'min' || method === 'max') {
+                const filtered = orderStatisticFilter(rgba, w, h, 3, method);
+                for (let i = 0; i < filtered.length; i++) {
+                    outData[i] = filtered[i];
+                }
+            }
+
+            ctxOut.putImageData(outImgData, 0, 0);
+        });
+    </script>
+</body>
+</html>
