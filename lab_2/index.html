@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Лаб. работа №2 — Чтение информации из изображений</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 20px;
+    line-height: 1.6;
+  }
+
+  h1 {
+    text-align: center;
+    color: #ccd6f6;
+    margin-bottom: 30px;
+    font-size: 2em;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  button, label.btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    font-family: 'Manrope', sans-serif;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  button:hover, label.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  button:disabled {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.5;
+  }
+
+  input[type=file] {
+    display: none;
+  }
+
+  .stats {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #8892b0;
+    font-size: 14px;
+  }
+
+  .progress-wrap {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    overflow: hidden;
+    height: 6px;
+    display: none;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  .drop-zone {
+    border: 2px dashed rgba(102, 126, 234, 0.3);
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 20px;
+    color: #8892b0;
+    transition: all 0.3s ease;
+    background: rgba(102, 126, 234, 0.02);
+  }
+
+  .drop-zone.active {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.08);
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th {
+    background: rgba(102, 126, 234, 0.1);
+    color: #ccd6f6;
+    position: sticky;
+    top: 0;
+    padding: 12px 10px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+  }
+
+  td {
+    padding: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #a8b2d1;
+  }
+
+  tr:hover td {
+    background: rgba(102, 126, 234, 0.05);
+    color: #ccd6f6;
+  }
+
+  .fmt {
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    display: inline-block;
+    font-size: 0.85em;
+  }
+
+  .fmt-jpeg { background: rgba(249, 226, 175, 0.15); color: #f9e2af; }
+  .fmt-png  { background: rgba(166, 227, 161, 0.15); color: #a6e3a1; }
+  .fmt-gif  { background: rgba(137, 220, 235, 0.15); color: #89dceb; }
+  .fmt-bmp  { background: rgba(243, 139, 168, 0.15); color: #f38ba8; }
+  .fmt-tiff { background: rgba(203, 166, 247, 0.15); color: #cba6f7; }
+  .fmt-pcx  { background: rgba(250, 179, 135, 0.15); color: #fab387; }
+
+  .err { color: #f38ba8; }
+
+  .tooltip {
+    position: relative;
+    cursor: help;
+    border-bottom: 1px dotted #667eea;
+    color: #667eea;
+  }
+
+  .tooltip:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a2e;
+    color: #ccd6f6;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    white-space: normal;
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    z-index: 100;
+    max-width: 350px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+</style>
+</head>
+<body>
+
+<h1> Лабораторная работа №2 — Чтение информации из изображений</h1>
+
+<div class="drop-zone" id="dropZone">
+  Перетащите файлы или папку сюда<br>
+  <small>Поддерживаются: JPG, PNG, GIF, BMP, TIFF, PCX</small>
+</div>
+
+<div class="controls">
+  <label class="btn">📂 Выбрать файлы
+    <input type="file" id="fileInput" multiple accept=".jpg,.jpeg,.png,.gif,.bmp,.tif,.tiff,.pcx">
+  </label>
+  <label class="btn">📁 Выбрать папку
+    <input type="file" id="folderInput" webkitdirectory directory multiple>
+  </label>
+  <button id="exportBtn" disabled>📥 Экспорт CSV</button>
+</div>
+
+<div class="stats" id="stats">Обработано: 0 | Общий объём: 0 МБ</div>
+<div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar"></div></div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Имя файла</th>
+        <th>Формат</th>
+        <th>Размер файла</th>
+        <th>Размер изображения (Ш×В, пикс)</th>
+        <th>Разрешение (dot/inch)</th>
+        <th>Глубина цвета (бит)</th>
+        <th>Сжатие</th>
+        <th>Доп. информация</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const tbody = $('tbody');
+const statsEl = $('stats');
+const progressWrap = $('progressWrap');
+const progressBar = $('progressBar');
+const exportBtn = $('exportBtn');
+
+let results = [];
+let totalBytes = 0;
+
+const fmtClass = { jpeg:'fmt-jpeg', png:'fmt-png', gif:'fmt-gif',
+                   bmp:'fmt-bmp', tiff:'fmt-tiff', pcx:'fmt-pcx' };
+
+// Форматирование размера файла в читаемый вид
+function fmtSize(b) {
+  if (b < 1024) return b + ' Б';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' КБ';
+  if (b < 1073741824) return (b/1048576).toFixed(2) + ' МБ';
+  return (b/1073741824).toFixed(2) + ' ГБ';
+}
+
+// Форматирование DPI с обработкой случаев
+function fmtDPI(x, y) {
+  if (!x && !y) return '—';
+  if (!y) return x.toFixed(1);
+  if (Math.abs(x-y) < 0.5) return x.toFixed(1);
+  return x.toFixed(1) + ' × ' + y.toFixed(1);
+}
+
+// Определение формата по расширению файла
+function getFormatByExt(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  const map = { jpg:'jpeg', jpeg:'jpeg', png:'png', gif:'gif', 
+                bmp:'bmp', tif:'tiff', tiff:'tiff', pcx:'pcx' };
+  return map[ext] || null;
+}
+
+// Определение формата по сигнатуре файла
+function getFormatBySignature(bytes) {
+  if (bytes.length < 4) return null;
+  if (bytes[0] === 0xFF && bytes[1] === 0xD8) return 'jpeg';
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) return 'png';
+  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) return 'gif';
+  if (bytes[0] === 0x42 && bytes[1] === 0x4D) return 'bmp';
+  if ((bytes[0] === 0x49 && bytes[1] === 0x49) || (bytes[0] === 0x4D && bytes[1] === 0x4D)) return 'tiff';
+  if (bytes[0] === 0x0A && [0,2,3,4,5].includes(bytes[1])) return 'pcx';
+  return null;
+}
+
+// Чтение 16-битного числа в little-endian
+function readUint16LE(bytes, offset) {
+  return bytes[offset] | (bytes[offset+1] << 8);
+}
+
+// Чтение 32-битного числа в little-endian
+function readUint32LE(bytes, offset) {
+  return bytes[offset] | (bytes[offset+1] << 8) | (bytes[offset+2] << 16) | (bytes[offset+3] << 24);
+}
+
+// Чтение 16-битного числа в big-endian
+function readUint16BE(bytes, offset) {
+  return (bytes[offset] << 8) | bytes[offset+1];
+}
+
+// Чтение 32-битного числа в big-endian
+function readUint32BE(bytes, offset) {
+  return (bytes[offset] << 24) | (bytes[offset+1] << 16) | (bytes[offset+2] << 8) | bytes[offset+3];
+}
+
+// Парсинг BMP файла
+function parseBMP(bytes) {
+  const result = { dpi: null, depth: null, compress: 'None', extra: '' };
+  if (bytes.length < 54) { result.extra = 'Файл слишком мал'; return result; }
+  
+  const dibSize = readUint32LE(bytes, 14);
+  result.extra = 'DIB header: ' + dibSize + ' байт';
+  
+  let bpp = 0, comp = 0, ppmX = 0, ppmY = 0;
+  
+  if (dibSize === 12) {
+    bpp = readUint16LE(bytes, 24);
+    result.extra += ', OS/2 формат';
+  } else if (dibSize >= 40) {
+    bpp = readUint16LE(bytes, 28);
+    comp = readUint32LE(bytes, 30);
+    ppmX = readUint32LE(bytes, 38);
+    ppmY = readUint32LE(bytes, 42);
+    result.extra += ', Windows формат';
+  } else {
+    bpp = readUint16LE(bytes, 28);
+    result.extra += ', неизвестный DIB=' + dibSize;
+  }
+  
+  result.depth = bpp;
+  const compressMap = { 0:'None', 1:'RLE-8', 2:'RLE-4', 3:'Bitfields', 4:'JPEG', 5:'PNG' };
+  result.compress = compressMap[comp] || 'Unknown(' + comp + ')';
+  
+  if (ppmX > 0 && ppmY > 0) {
+    result.dpi = [ppmX / 39.3701, ppmY / 39.3701];
+  }
+  
+  return result;
+}
+
+// Парсинг JPEG файла
+function parseJPEG(bytes) {
+  const result = { dpi: null, depth: null, compress: 'baseline JPEG', extra: '' };
+  let off = 2;
+  
+  while (off < bytes.length - 1) {
+    if (bytes[off] !== 0xFF) break;
+    const marker = bytes[off+1];
+    off += 2;
+    
+    if (marker === 0xD9) break;
+    if (marker >= 0xD0 && marker <= 0xD7) continue;
+    
+    const len = readUint16BE(bytes, off);
+    if (len < 2) break;
+    
+    if (marker === 0xE0 && len >= 7) {
+      const unit = bytes[off+2];
+      const dpiX = readUint16BE(bytes, off+3);
+      const dpiY = readUint16BE(bytes, off+5);
+      if (unit === 2) result.dpi = [dpiX * 2.54, dpiY * 2.54];
+      else if (unit === 1) result.dpi = [dpiX, dpiY];
+    }
+    else if ((marker === 0xC0 || marker === 0xC2) && len >= 8) {
+      const precision = bytes[off+2];
+      const components = bytes[off+7];
+      result.depth = precision * components;
+      if (marker === 0xC2) result.compress = 'progressive JPEG';
+    }
+    
+    off += len;
+  }
+  
+  return result;
+}
+
+// Парсинг PNG файла
+function parsePNG(bytes) {
+  const result = { dpi: null, depth: null, compress: 'deflate', extra: '' };
+  let off = 8;
+  
+  while (off < bytes.length - 8) {
+    const len = readUint32BE(bytes, off);
+    const type = String.fromCharCode(bytes[off+4], bytes[off+5], bytes[off+6], bytes[off+7]);
+    
+    if (type === 'IHDR' && len >= 13) {
+      const bitDepth = bytes[off+16];
+      const colorType = bytes[off+17];
+      const channels = [1,0,3,1,2,0,4][colorType] || 1;
+      result.depth = bitDepth * channels;
+      result.extra = 'ColorType=' + colorType + ', channels=' + channels;
+    }
+    else if (type === 'pHYs' && len >= 9) {
+      const ppmX = readUint32BE(bytes, off+8);
+      const ppmY = readUint32BE(bytes, off+12);
+      const unit = bytes[off+16];
+      if (unit === 1) result.dpi = [ppmX * 0.0254, ppmY * 0.0254];
+    }
+    else if (type === 'IEND') break;
+    
+    off += 12 + len;
+  }
+  
+  return result;
+}
+
+// Парсинг GIF файла
+function parseGIF(bytes) {
+  const result = { dpi: null, depth: null, compress: 'LZW', extra: '' };
+  if (bytes.length < 13) return result;
+  
+  const packed = bytes[10];
+  const gctFlag = (packed >> 7) & 1;
+  const colorRes = ((packed >> 4) & 7) + 1;
+  const gctSize = (packed & 7) + 1;
+  const gctColors = gctFlag ? Math.pow(2, gctSize) : 0;
+  
+  result.depth = colorRes;
+  result.extra = 'Палитра: ' + gctColors + ' цветов';
+  
+  return result;
+}
+
+// Парсинг TIFF файла
+function parseTIFF(bytes) {
+  const result = { dpi: null, depth: null, compress: 'Unknown', extra: '' };
+  if (bytes.length < 8) return result;
+  
+  const le = bytes[0] === 0x49;
+  const read16 = le ? readUint16LE : readUint16BE;
+  const read32 = le ? readUint32LE : readUint32BE;
+  
+  if (read16(bytes, 2) !== 42) return result;
+  
+  const tags = {};
+  let ifdOff = read32(bytes, 4);
+  let safety = 0;
+  
+  while (ifdOff > 0 && ifdOff + 2 <= bytes.length && safety++ < 100) {
+    const count = read16(bytes, ifdOff);
+    for (let i = 0; i < count; i++) {
+      const eOff = ifdOff + 2 + i*12;
+      if (eOff + 12 > bytes.length) break;
+      const tag = read16(bytes, eOff);
+      const type = read16(bytes, eOff+2);
+      const cnt = read32(bytes, eOff+4);
+      const valOff = eOff + 8;
+
+      if (type === 3 && cnt === 1) tags[tag] = read16(bytes, valOff);
+      else if (type === 4 && cnt === 1) tags[tag] = read32(bytes, valOff);
+      else if (type === 5 && cnt === 1) {
+        const o = read32(bytes, valOff);
+        if (o + 8 <= bytes.length) {
+          const n = read32(bytes, o), d = read32(bytes, o+4);
+          tags[tag] = d ? n/d : 0;
+        }
+      }
+    }
+    ifdOff = read32(bytes, ifdOff + 2 + count*12);
+  }
+
+  const bps = tags[258] || 8;
+  const spp = tags[277] || 1;
+  result.depth = bps * spp;
+  
+  const compMap = { 1:'None', 5:'LZW', 7:'JPEG', 8:'Deflate', 32773:'PackBits' };
+  result.compress = compMap[tags[259]] || 'Unknown(' + (tags[259]||'?') + ')';
+  
+  const dpiX = tags[282] || 0, dpiY = tags[283] || 0;
+  const resUnit = tags[296] || 2;
+  if (dpiX > 0 && dpiY > 0) {
+    result.dpi = resUnit === 3 ? [dpiX * 2.54, dpiY * 2.54] : [dpiX, dpiY];
+  }
+  result.extra = 'SPP=' + spp;
+  
+  return result;
+}
+
+// Парсинг PCX файла
+function parsePCX(bytes) {
+  const result = { dpi: null, depth: null, compress: 'None', extra: '' };
+  if (bytes.length < 128) return result;
+  
+  const bpp = bytes[3];
+  const numPlanes = bytes[65];
+  const hDpi = readUint16LE(bytes, 12);
+  const vDpi = readUint16LE(bytes, 14);
+  const encoding = bytes[2];
+  const ver = bytes[1];
+  
+  result.depth = bpp * numPlanes;
+  result.compress = encoding === 1 ? 'RLE' : 'None';
+  if (hDpi > 0 && vDpi > 0) result.dpi = [hDpi, vDpi];
+  result.extra = 'v' + ver + ', planes=' + numPlanes;
+  
+  return result;
+}
+
+// Получение размеров изображения через браузерный парсер
+async function getImageDimensions(file) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      resolve({ w: img.naturalWidth, h: img.naturalHeight });
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => {
+      resolve({ w: 0, h: 0 });
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+}
+
+// Обработка одного файла
+async function processFile(file) {
+  const headerBytes = new Uint8Array(await file.slice(0, 512).arrayBuffer());
+  
+  let format = getFormatBySignature(headerBytes);
+  if (!format) format = getFormatByExt(file.name);
+  
+  if (!format) {
+    return { file, format: null, dims: '—', dpi: '—', depth: '—', compress: '—', extra: 'Неизвестный формат' };
+  }
+
+  const dims = await getImageDimensions(file);
+  
+  let binInfo = { dpi: null, depth: null, compress: '—', extra: '' };
+  
+  try {
+    const fullHeader = new Uint8Array(await file.slice(0, 65536).arrayBuffer());
+    
+    if (format === 'bmp') binInfo = parseBMP(fullHeader);
+    else if (format === 'jpeg') binInfo = parseJPEG(fullHeader);
+    else if (format === 'png') binInfo = parsePNG(fullHeader);
+    else if (format === 'gif') binInfo = parseGIF(fullHeader);
+    else if (format === 'tiff') binInfo = parseTIFF(fullHeader);
+    else if (format === 'pcx') binInfo = parsePCX(fullHeader);
+  } catch (e) {
+    console.error('Parse error for', file.name, e);
+  }
+
+  return {
+    file,
+    format,
+    dims: dims.w > 0 && dims.h > 0 ? dims.w + ' × ' + dims.h : '—',
+    dpi: binInfo.dpi ? fmtDPI(binInfo.dpi[0], binInfo.dpi[1]) : '—',
+    depth: binInfo.depth || '—',
+    compress: binInfo.compress || '—',
+    extra: binInfo.extra || '—'
+  };
+}
+
+// Обработка списка файлов
+async function processFiles(files) {
+  const imageExts = /\.(jpe?g|png|gif|bmp|tiff?|pcx)$/i;
+  const list = Array.from(files).filter(f => imageExts.test(f.name));
+
+  if (!list.length) {
+    alert('Изображения не найдены');
+    return;
+  }
+
+  $('fileInput').disabled = true;
+  $('folderInput').disabled = true;
+  progressWrap.style.display = 'block';
+  tbody.innerHTML = '';
+  results = [];
+  totalBytes = 0;
+
+  const BATCH = 5;
+  for (let i = 0; i < list.length; i += BATCH) {
+    const batch = list.slice(i, i + BATCH);
+    
+    for (const file of batch) {
+      const r = await processFile(file);
+      totalBytes += r.file.size;
+      results.push(r);
+      appendRow(r);
+    }
+
+    progressBar.style.width = ((i + batch.length) / list.length * 100) + '%';
+    statsEl.textContent = 'Обработано: ' + Math.min(i+batch.length, list.length) + ' / ' + list.length + ' | Общий объём: ' + fmtSize(totalBytes);
+
+    await new Promise(r => requestAnimationFrame(r));
+  }
+
+  exportBtn.disabled = results.length === 0;
+  $('fileInput').disabled = false;
+  $('folderInput').disabled = false;
+  progressWrap.style.display = 'none';
+}
+
+// Добавление строки в таблицу
+function appendRow(r) {
+  const tr = document.createElement('tr');
+  const fmt = r.format ? r.format.toUpperCase() : '—';
+  const cls = r.format ? fmtClass[r.format] || '' : '';
+
+  tr.innerHTML = '<td title="' + r.file.name + '">' + 
+    (r.file.name.length > 40 ? r.file.name.slice(0,37)+'...' : r.file.name) + 
+    '</td><td class="fmt ' + cls + '">' + fmt + 
+    '</td><td>' + fmtSize(r.file.size) + 
+    '</td><td>' + r.dims + 
+    '</td><td>' + r.dpi + 
+    '</td><td>' + r.depth + 
+    '</td><td>' + r.compress + 
+    '</td><td>' + r.extra + '</td>';
+  tbody.appendChild(tr);
+}
+
+// Экспорт результатов в CSV
+function exportCSV() {
+  const headers = ['Имя файла','Формат','Размер файла','Ширина','Высота','DPI X','DPI Y','Глубина цвета','Сжатие'];
+  const rows = results.map(r => {
+    const dims = (r.dims||'—').split('×').map(s=>s.trim());
+    const dpi = (r.dpi||'—').split('×').map(s=>s.trim());
+    return [r.file.name, r.format?.toUpperCase()||'', fmtSize(r.file.size),
+            dims[0]||'', dims[1]||'', dpi[0]||'', dpi[1]||'', r.depth||'', r.compress||''];
+  });
+  const csv = [headers, ...rows]
+    .map(row => row.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(';'))
+    .join('\n');
+  const blob = new Blob(['\ufeff'+csv], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'lab2_results.csv';
+  a.click();
+}
+
+// Обработчики событий
+$('fileInput').addEventListener('change', e => processFiles(e.target.files));
+$('folderInput').addEventListener('change', e => processFiles(e.target.files));
+$('exportBtn').addEventListener('click', exportCSV);
+
+const dz = $('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('active'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('active'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('active');
+  const items = e.dataTransfer.items;
+  if (items) {
+    const files = [];
+    const entries = [];
+    for (const it of items) {
+      const entry = it.webkitGetAsEntry?.();
+      if (entry) entries.push(entry);
+      else if (it.kind === 'file') files.push(it.getAsFile());
+    }
+    if (entries.length) traverseEntries(entries, files);
+    else if (files.length) processFiles(files);
+  }
+});
+
+// Рекурсивный обход папок при drag&drop
+function traverseEntries(entries, files) {
+  const proms = entries.map(e => new Promise(res => {
+    if (e.isFile) e.file(f => { files.push(f); res(); });
+    else if (e.isDirectory) {
+      const r = e.createReader();
+      r.readEntries(ch => traverseEntries(ch, files).then(res));
+    } else res();
+  }));
+  return Promise.all(proms).then(() => processFiles(files));
+}
+</script>
+</body>
+</html>
