@@ -95,12 +95,35 @@
     padding:32px 22px 28px;
     margin-bottom:24px;
   }
+  .hero-content{
+    display:flex;
+    gap:40px;
+    align-items:flex-start;
+    justify-content:center;
+    flex-wrap:wrap;
+    width:100%;
+  }
+  .hero-swatch-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:20px;
+  }
+  .hero-palette-col{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    width:300px;
+    max-width:100%;
+    padding-top:2px;
+  }
+  .hero-palette-col .section-label{ margin-bottom:0; }
   #main-swatch{
-    width:min(260px, 60vw);
-    height:min(260px, 60vw);
-    border-radius:16px;
+    width:min(340px, 62vw);
+    height:min(340px, 62vw);
+    border-radius:18px;
     border:1px solid rgba(255,255,255,0.14);
-    box-shadow:0 14px 40px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(0,0,0,0.15);
+    box-shadow:0 16px 46px rgba(0,0,0,0.48), inset 0 0 0 1px rgba(0,0,0,0.15);
     flex-shrink:0;
   }
   .preview-readouts{
@@ -301,30 +324,40 @@
   <div id="warning-banner"></div>
 
   <div class="preview-row">
-    <div id="main-swatch"></div>
-    <div class="preview-readouts">
-      <div>RGB <b id="ro-rgb">255, 255, 255</b></div>
-      <div>CMYK <b id="ro-cmyk">0, 0, 0, 0</b></div>
-      <div>LAB <b id="ro-lab">100.0, 0.0, 0.0</b></div>
-      <div>HEX <b id="ro-hex">#FFFFFF</b></div>
+    <div class="hero-content">
+      <div class="hero-swatch-col">
+        <div id="main-swatch"></div>
+        <div class="preview-readouts">
+          <div>RGB <b id="ro-rgb">255, 255, 255</b></div>
+          <div>CMYK <b id="ro-cmyk">0, 0, 0, 0</b></div>
+          <div>LAB <b id="ro-lab">100, 0, 0</b></div>
+          <div>HEX <b id="ro-hex">#FFFFFF</b></div>
+        </div>
+      </div>
+      <div class="hero-palette-col">
+        <span class="section-label">Палитра — задаёт цвет сразу для всех трёх моделей</span>
+        <div class="palette-block" id="hero-palette"></div>
+      </div>
     </div>
   </div>
 
   <div class="panels" id="panels"></div>
 
-  <footer>Каждый цвет можно задать тремя способами: точный ввод числа, слайдер (плавное изменение), палитра (клик/перетаскивание). Изменение в любой модели мгновенно пересчитывает две другие.</footer>
+  <footer>Каждый цвет можно задать тремя способами: точный ввод целого числа, слайдер (плавное изменение) — оба доступны в каждой из трёх моделей — и общая палитра сверху (клик по квадрату, ползунок оттенка или пипетка). Изменение в любом месте мгновенно пересчитывает все три модели.</footer>
 </div>
 
 <script>
-/*    1. МАТЕМАТИКА ЦВЕТОВЫХ МОДЕЛЕЙ
+/* =========================================================
+   1. МАТЕМАТИКА ЦВЕТОВЫХ МОДЕЛЕЙ
    Хаб преобразований: RGB (0..255, целые) — единственный
    канонический источник истины. CMYK и LAB всегда
    пересчитываются заново из актуального RGB, поэтому три
-   модели никогда не расходятся между собой. */
+   модели никогда не расходятся между собой.
+   ========================================================= */
 
 function clamp(v,min,max){ return Math.min(max, Math.max(min, v)); }
 
-//  RGB <-> CMYK 
+// ---- RGB <-> CMYK ----
 function rgbToCmyk(r,g,b){
   const rr=r/255, gg=g/255, bb=b/255;
   const k = 1 - Math.max(rr,gg,bb);
@@ -346,7 +379,7 @@ function cmykToRgb(c,m,y,k){
   };
 }
 
-//  RGB <-> XYZ (sRGB, D65)
+// ---- RGB <-> XYZ (sRGB, D65) ----
 function rgbToXyz(r,g,b){
   function lin(c){ c/=255; return c<=0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055,2.4); }
   const R=lin(r), G=lin(g), B=lin(b);
@@ -367,7 +400,7 @@ function xyzToRgb(x,y,z){
   return { r:R, g:G, b:B, outOfGamut };
 }
 
-//  XYZ <-> LAB (D65 white point) 
+// ---- XYZ <-> LAB (D65 white point) ----
 const Xn=95.047, Yn=100.0, Zn=108.883;
 function xyzToLab(x,y,z){
   function f(t){ return t>0.008856 ? Math.cbrt(t) : (7.787*t + 16/116); }
@@ -380,11 +413,11 @@ function labToXyz(l,a,b){
   return { x:Xn*finv(fx), y:Yn*finv(fy), z:Zn*finv(fz) };
 }
 
-//  составные преобразования 
+// ---- составные преобразования ----
 function rgbToLab(r,g,b){ const xyz=rgbToXyz(r,g,b); return xyzToLab(xyz.x,xyz.y,xyz.z); }
 function labToRgb(l,a,b){ const xyz=labToXyz(l,a,b); return xyzToRgb(xyz.x,xyz.y,xyz.z); }
 
-//  RGB <-> HSV (только для отображения палитры RGB, не отдельная модель) 
+// ---- RGB <-> HSV (только для отображения палитры RGB, не отдельная модель) ----
 function rgbToHsv(r,g,b){
   r/=255; g/=255; b/=255;
   const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
@@ -413,7 +446,8 @@ function rgbToHex(r,g,b){
   return '#'+h(r)+h(g)+h(b);
 }
 
-/*    2. СОСТОЯНИЕ*/
+   2. СОСТОЯНИЕ
+
 const state = {
   rgb:{r:255,g:255,b:255},
   cmyk:{c:0,m:0,y:0,k:0},
@@ -433,7 +467,8 @@ function recomputeFromRgb(r,g,b){
 }
 recomputeFromRgb(255,255,255);
 
-/* 3. ПРЕДУПРЕЖДЕНИЯ О ВЫХОДЕ ЗА ГРАНИЦЫ */
+   3. ПРЕДУПРЕЖДЕНИЯ О ВЫХОДЕ ЗА ГРАНИЦЫ
+
 let warnTimer=null;
 function showWarning(msg){
   const el=document.getElementById('warning-banner');
@@ -443,7 +478,9 @@ function showWarning(msg){
   warnTimer=setTimeout(()=>el.classList.remove('show'), 4200);
 }
 
-/*    4. ВВОД ЦВЕТА ИЗ КАЖДОЙ МОДЕЛИ */
+/* =========================================================
+   4. ВВОД ЦВЕТА ИЗ КАЖДОЙ МОДЕЛИ
+   ========================================================= */
 function setFromRgbField(name, rawValue){
   const v = clamp(rawValue,0,255);
   if(v !== rawValue) showWarning(`Компонента ${name.toUpperCase()} вне диапазона 0…255 — значение ограничено до ${Math.round(v)}.`);
@@ -454,7 +491,7 @@ function setFromRgbField(name, rawValue){
 
 function setFromCmykField(name, rawValue){
   const v = clamp(rawValue,0,100);
-  if(v !== rawValue) showWarning(`Компонента ${name.toUpperCase()} вне диапазона 0…100% — значение ограничено до ${v.toFixed(1)}.`);
+  if(v !== rawValue) showWarning(`Компонента ${name.toUpperCase()} вне диапазона 0…100% — значение ограничено до ${Math.round(v)}.`);
   const cmyk = {...state.cmyk, [name]: v};
   const rgb = cmykToRgb(cmyk.c, cmyk.m, cmyk.y, cmyk.k);
   // Математически CMYK(0..100) всегда даёт RGB в допустимых границах 0..255, обрезание не требуется.
@@ -466,7 +503,7 @@ function setFromLabField(name, rawValue){
   const bounds = { l:[0,100], a:[-128,127], b:[-128,127] };
   const [lo,hi] = bounds[name];
   const v = clamp(rawValue, lo, hi);
-  if(v !== rawValue) showWarning(`Компонента ${name.toUpperCase()} вне рабочего диапазона [${lo}; ${hi}] — значение ограничено до ${v.toFixed(1)}.`);
+  if(v !== rawValue) showWarning(`Компонента ${name.toUpperCase()} вне рабочего диапазона [${lo}; ${hi}] — значение ограничено до ${Math.round(v)}.`);
   const lab = {...state.lab, [name]: v};
   const rgb = labToRgb(lab.l, lab.a, lab.b);
   if(rgb.outOfGamut){
@@ -476,7 +513,7 @@ function setFromLabField(name, rawValue){
   renderAll();
 }
 
-/*    5. ОПИСАНИЕ ПАНЕЛЕЙ И ПОСТРОЕНИЕ DOM */
+   5. ОПИСАНИЕ ПАНЕЛЕЙ И ПОСТРОЕНИЕ DOM
 const MODEL_DEFS = [
   {
     key:'rgb', title:'RGB', subtitle:'аддитивная, экран',
@@ -491,10 +528,10 @@ const MODEL_DEFS = [
   {
     key:'cmyk', title:'CMYK', subtitle:'субтрактивная, печать',
     channels:[
-      {name:'c', label:'C — голубой', min:0, max:100, step:0.1, dp:1},
-      {name:'m', label:'M — пурпурный', min:0, max:100, step:0.1, dp:1},
-      {name:'y', label:'Y — жёлтый', min:0, max:100, step:0.1, dp:1},
-      {name:'k', label:'K — чёрный', min:0, max:100, step:0.1, dp:1},
+      {name:'c', label:'C — голубой', min:0, max:100, step:1, dp:0},
+      {name:'m', label:'M — пурпурный', min:0, max:100, step:1, dp:0},
+      {name:'y', label:'Y — жёлтый', min:0, max:100, step:1, dp:0},
+      {name:'k', label:'K — чёрный', min:0, max:100, step:1, dp:0},
     ],
     setField: setFromCmykField,
     getValues: ()=>state.cmyk,
@@ -502,9 +539,9 @@ const MODEL_DEFS = [
   {
     key:'lab', title:'LAB', subtitle:'аппаратно-независимая, CIE',
     channels:[
-      {name:'l', label:'L — светлота', min:0, max:100, step:0.1, dp:1},
-      {name:'a', label:'a — зел.↔красн.', min:-128, max:127, step:0.1, dp:1},
-      {name:'b', label:'b — синий↔жёлт.', min:-128, max:127, step:0.1, dp:1},
+      {name:'l', label:'L — светлота', min:0, max:100, step:1, dp:0},
+      {name:'a', label:'a — зел.↔красн.', min:-128, max:127, step:1, dp:0},
+      {name:'b', label:'b — синий↔жёлт.', min:-128, max:127, step:1, dp:0},
     ],
     setField: setFromLabField,
     getValues: ()=>state.lab,
@@ -538,7 +575,7 @@ function buildPanels(){
     head.innerHTML = `<h2>${model.title}</h2><span>${model.subtitle}</span>`;
     panel.appendChild(head);
 
-    //  численный ввод + слайдеры 
+    // --- численный ввод + слайдеры ---
     const fieldsBlock = document.createElement('div');
     model.channels.forEach(ch=>{
       const row = document.createElement('div');
@@ -564,7 +601,7 @@ function buildPanels(){
       function commit(rawStr, isFinal){
         const raw = parseFloat(rawStr);
         if(Number.isNaN(raw)) return;
-        model.setField(ch.name, raw);
+        model.setField(ch.name, Math.round(raw));
         if(isFinal){
           // при потере фокуса — пере-синхронизировать поле точным (возможно обрезанным) значением
         }
@@ -575,61 +612,56 @@ function buildPanels(){
       number.addEventListener('keydown', (e)=>{ if(e.key==='Enter') number.blur(); });
     });
     panel.appendChild(fieldsBlock);
-
-    // --- палитра (один и тот же простой виджет для всех трёх моделей: квадрат HSV + ползунок оттенка + пипетка) ---
-    const paletteLabel = document.createElement('span');
-    paletteLabel.className='section-label';
-    paletteLabel.textContent = 'Палитра';
-    panel.appendChild(paletteLabel);
-
-    const paletteBlock = document.createElement('div');
-    paletteBlock.className='palette-block';
-
-    const canvasWrap = document.createElement('div');
-    canvasWrap.className='palette-canvas-wrap';
-    const canvas = document.createElement('canvas');
-    canvas.width=220; canvas.height=130;
-    const marker = document.createElement('div');
-    marker.className='palette-marker';
-    canvasWrap.appendChild(canvas);
-    canvasWrap.appendChild(marker);
-    paletteBlock.appendChild(canvasWrap);
-
-    const hueRow = document.createElement('div');
-    hueRow.className='hue-row';
-    const hueSlider = document.createElement('input');
-    hueSlider.type='range'; hueSlider.min=0; hueSlider.max=360; hueSlider.step=1;
-    hueRow.appendChild(hueSlider);
-    paletteBlock.appendChild(hueRow);
-
-    const edRow = document.createElement('div');
-    edRow.className='eyedropper-row';
-    const chip = document.createElement('div');
-    chip.className='current-color-chip';
-    const edBtn = document.createElement('button');
-    edBtn.type='button';
-    edBtn.className='eyedropper-btn';
-    edBtn.title='Пипетка: выбрать цвет с экрана';
-    edBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 1-4 9.5-9.5"/><path d="m13.5 6.5 4 4"/><path d="M17.5 2.5a2.121 2.121 0 0 1 3 3L18 8l-3-3z"/></svg>';
-    const edHint = document.createElement('span');
-    edHint.className='eyedropper-hint';
-    edHint.textContent='выбрать цвет с экрана';
-    edRow.appendChild(chip);
-    edRow.appendChild(edBtn);
-    edRow.appendChild(edHint);
-    paletteBlock.appendChild(edRow);
-
-    panel.appendChild(paletteBlock);
     container.appendChild(panel);
-
-    fieldRefs[model.key]._palette = { canvas, marker, hueSlider, chip, edBtn };
-    buildSimplePalette(fieldRefs[model.key]._palette);
   });
 }
 
-/*  Простая палитра (одинакова для RGB / CMYK / LAB панелей):
+/* ---------- Единственная палитра на всё приложение (справа от большого превью в hero-блоке) ---------- */
+function buildHeroPalette(){
+  const container = document.getElementById('hero-palette');
+
+  const canvasWrap = document.createElement('div');
+  canvasWrap.className='palette-canvas-wrap';
+  const canvas = document.createElement('canvas');
+  canvas.width=240; canvas.height=150;
+  const marker = document.createElement('div');
+  marker.className='palette-marker';
+  canvasWrap.appendChild(canvas);
+  canvasWrap.appendChild(marker);
+  container.appendChild(canvasWrap);
+
+  const hueRow = document.createElement('div');
+  hueRow.className='hue-row';
+  const hueSlider = document.createElement('input');
+  hueSlider.type='range'; hueSlider.min=0; hueSlider.max=360; hueSlider.step=1;
+  hueRow.appendChild(hueSlider);
+  container.appendChild(hueRow);
+
+  const edRow = document.createElement('div');
+  edRow.className='eyedropper-row';
+  const chip = document.createElement('div');
+  chip.className='current-color-chip';
+  const edBtn = document.createElement('button');
+  edBtn.type='button';
+  edBtn.className='eyedropper-btn';
+  edBtn.title='Пипетка: выбрать цвет с экрана';
+  edBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 22 1-4 9.5-9.5"/><path d="m13.5 6.5 4 4"/><path d="M17.5 2.5a2.121 2.121 0 0 1 3 3L18 8l-3-3z"/></svg>';
+  const edHint = document.createElement('span');
+  edHint.className='eyedropper-hint';
+  edHint.textContent='выбрать цвет с экрана';
+  edRow.appendChild(chip);
+  edRow.appendChild(edBtn);
+  edRow.appendChild(edHint);
+  container.appendChild(edRow);
+
+  heroPalette = { canvas, marker, hueSlider, chip, edBtn };
+  buildSimplePalette(heroPalette);
+}
+let heroPalette = null;
+
+/* ---------- Простая палитра (одинакова для RGB / CMYK / LAB панелей):
    классический квадрат "насыщенность × яркость" при заданном оттенке,
-   ползунок оттенка снизу, и кнопка-пипетка для выбора цвета с экрана.  */
+   ползунок оттенка снизу, и кнопка-пипетка для выбора цвета с экрана. ---------- */
 function buildSimplePalette(p){
   const ctx = p.canvas.getContext('2d');
   const W=p.canvas.width, H=p.canvas.height;
@@ -704,7 +736,7 @@ function buildSimplePalette(p){
   updateMarkers();
 }
 
-/*    6. ОТРИСОВКА (синхронизация всего интерфейса с state) */
+   6. ОТРИСОВКА (синхронизация всего интерфейса с state)
 function sliderGradientCss(modelKey, channelName, currentValues, min, max){
   const steps=8;
   const stops=[];
@@ -732,25 +764,25 @@ function renderAll(skipActiveFocus){
       }
       ref.slider.style.setProperty('--track-bg', sliderGradientCss(model.key, ch.name, values, ch.min, ch.max));
     });
-    const pal = fieldRefs[model.key]._palette;
-    if(pal){
-      pal._redrawSquare();
-      pal._updateMarkers();
-    }
   });
+
+  if(heroPalette){
+    heroPalette._redrawSquare();
+    heroPalette._updateMarkers();
+  }
 
   const {r,g,b} = state.rgb;
   const hex = rgbToHex(r,g,b);
   document.getElementById('main-swatch').style.background = hex;
   document.getElementById('ro-rgb').textContent = `${r}, ${g}, ${b}`;
-  document.getElementById('ro-cmyk').textContent = `${state.cmyk.c.toFixed(1)}, ${state.cmyk.m.toFixed(1)}, ${state.cmyk.y.toFixed(1)}, ${state.cmyk.k.toFixed(1)}`;
-  document.getElementById('ro-lab').textContent = `${state.lab.l.toFixed(1)}, ${state.lab.a.toFixed(1)}, ${state.lab.b.toFixed(1)}`;
+  document.getElementById('ro-cmyk').textContent = `${Math.round(state.cmyk.c)}, ${Math.round(state.cmyk.m)}, ${Math.round(state.cmyk.y)}, ${Math.round(state.cmyk.k)}`;
+  document.getElementById('ro-lab').textContent = `${Math.round(state.lab.l)}, ${Math.round(state.lab.a)}, ${Math.round(state.lab.b)}`;
   document.getElementById('ro-hex').textContent = hex.toUpperCase();
 }
 
-/*   7. СТАРТ */
+   7. СТАРТ
 buildPanels();
-// стартовый цвет — приятный акцентный, не белый, чтобы сразу было видно все три модели в работе
+buildHeroPalette();
 recomputeFromRgb(196, 90, 60);
 renderAll();
 </script>
