@@ -5,12 +5,7 @@
 <title>Лаб. работа №2 — Чтение информации из изображений</title>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
@@ -19,7 +14,6 @@
     padding: 20px;
     line-height: 1.6;
   }
-
   h1 {
     text-align: center;
     color: #ccd6f6;
@@ -28,7 +22,6 @@
     font-weight: 600;
     letter-spacing: -0.5px;
   }
-
   .controls {
     display: flex;
     gap: 12px;
@@ -36,7 +29,6 @@
     flex-wrap: wrap;
     margin-bottom: 20px;
   }
-
   button, label.btn {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -53,30 +45,23 @@
     gap: 8px;
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   }
-
   button:hover, label.btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
   }
-
   button:disabled {
     background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
     cursor: not-allowed;
     box-shadow: none;
     opacity: 0.5;
   }
-
-  input[type=file] {
-    display: none;
-  }
-
+  input[type=file] { display: none; }
   .stats {
     text-align: center;
     margin-bottom: 15px;
     color: #8892b0;
     font-size: 14px;
   }
-
   .progress-wrap {
     width: 100%;
     max-width: 600px;
@@ -87,14 +72,12 @@
     height: 6px;
     display: none;
   }
-
   .progress-bar {
     height: 100%;
     background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
     width: 0%;
     transition: width 0.3s ease;
   }
-
   .drop-zone {
     border: 2px dashed rgba(102, 126, 234, 0.3);
     border-radius: 12px;
@@ -105,25 +88,17 @@
     transition: all 0.3s ease;
     background: rgba(102, 126, 234, 0.02);
   }
-
   .drop-zone.active {
     border-color: #667eea;
     background: rgba(102, 126, 234, 0.08);
   }
-
   .table-wrap {
     overflow-x: auto;
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th {
     background: rgba(102, 126, 234, 0.1);
     color: #ccd6f6;
@@ -134,18 +109,15 @@
     font-weight: 600;
     border-bottom: 2px solid rgba(102, 126, 234, 0.2);
   }
-
   td {
     padding: 10px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     color: #a8b2d1;
   }
-
   tr:hover td {
     background: rgba(102, 126, 234, 0.05);
     color: #ccd6f6;
   }
-
   .fmt {
     font-weight: 700;
     padding: 4px 10px;
@@ -153,23 +125,19 @@
     display: inline-block;
     font-size: 0.85em;
   }
-
   .fmt-jpeg { background: rgba(249, 226, 175, 0.15); color: #f9e2af; }
   .fmt-png  { background: rgba(166, 227, 161, 0.15); color: #a6e3a1; }
   .fmt-gif  { background: rgba(137, 220, 235, 0.15); color: #89dceb; }
   .fmt-bmp  { background: rgba(243, 139, 168, 0.15); color: #f38ba8; }
   .fmt-tiff { background: rgba(203, 166, 247, 0.15); color: #cba6f7; }
   .fmt-pcx  { background: rgba(250, 179, 135, 0.15); color: #fab387; }
-
   .err { color: #f38ba8; }
-
   .tooltip {
     position: relative;
     cursor: help;
     border-bottom: 1px dotted #667eea;
     color: #667eea;
   }
-
   .tooltip:hover::after {
     content: attr(data-tip);
     position: absolute;
@@ -191,7 +159,7 @@
 </head>
 <body>
 
-<h1> Лабораторная работа №2 — Чтение информации из изображений</h1>
+<h1>Лабораторная работа №2 — Чтение информации из изображений</h1>
 
 <div class="drop-zone" id="dropZone">
   Перетащите файлы или папку сюда<br>
@@ -243,7 +211,6 @@ let totalBytes = 0;
 const fmtClass = { jpeg:'fmt-jpeg', png:'fmt-png', gif:'fmt-gif',
                    bmp:'fmt-bmp', tiff:'fmt-tiff', pcx:'fmt-pcx' };
 
-// Форматирование размера файла в читаемый вид
 function fmtSize(b) {
   if (b < 1024) return b + ' Б';
   if (b < 1048576) return (b/1024).toFixed(1) + ' КБ';
@@ -251,15 +218,20 @@ function fmtSize(b) {
   return (b/1073741824).toFixed(2) + ' ГБ';
 }
 
-// Форматирование DPI с обработкой случаев
 function fmtDPI(x, y) {
   if (!x && !y) return '—';
-  if (!y) return x.toFixed(1);
-  if (Math.abs(x-y) < 0.5) return x.toFixed(1);
-  return x.toFixed(1) + ' × ' + y.toFixed(1);
+  const formatNum = (n) => Number.isInteger(n) ? n.toString() : n.toFixed(1);
+  if (!y) return formatNum(x);
+  if (Math.abs(x - y) < 0.5) return formatNum(x);
+  return formatNum(x) + ' × ' + formatNum(y);
 }
 
-// Определение формата по расширению файла
+function calculateDefaultDPI(format) {
+  if (['jpeg', 'png', 'gif'].includes(format)) return [96, 96];
+  if (['bmp', 'tiff', 'pcx'].includes(format)) return [300, 300];
+  return [96, 96];
+}
+
 function getFormatByExt(name) {
   const ext = name.split('.').pop().toLowerCase();
   const map = { jpg:'jpeg', jpeg:'jpeg', png:'png', gif:'gif', 
@@ -267,7 +239,6 @@ function getFormatByExt(name) {
   return map[ext] || null;
 }
 
-// Определение формата по сигнатуре файла
 function getFormatBySignature(bytes) {
   if (bytes.length < 4) return null;
   if (bytes[0] === 0xFF && bytes[1] === 0xD8) return 'jpeg';
@@ -279,29 +250,25 @@ function getFormatBySignature(bytes) {
   return null;
 }
 
-// Чтение 16-битного числа в little-endian
 function readUint16LE(bytes, offset) {
   return bytes[offset] | (bytes[offset+1] << 8);
 }
 
-// Чтение 32-битного числа в little-endian
 function readUint32LE(bytes, offset) {
   return bytes[offset] | (bytes[offset+1] << 8) | (bytes[offset+2] << 16) | (bytes[offset+3] << 24);
 }
 
-// Чтение 16-битного числа в big-endian
 function readUint16BE(bytes, offset) {
   return (bytes[offset] << 8) | bytes[offset+1];
 }
 
-// Чтение 32-битного числа в big-endian
 function readUint32BE(bytes, offset) {
   return (bytes[offset] << 24) | (bytes[offset+1] << 16) | (bytes[offset+2] << 8) | bytes[offset+3];
 }
 
 // Парсинг BMP файла
 function parseBMP(bytes) {
-  const result = { dpi: null, depth: null, compress: 'None', extra: '' };
+  const result = { dpi: null, depth: null, compress: 'None', extra: '', width: 0, height: 0 };
   if (bytes.length < 54) { result.extra = 'Файл слишком мал'; return result; }
   
   const dibSize = readUint32LE(bytes, 14);
@@ -310,15 +277,25 @@ function parseBMP(bytes) {
   let bpp = 0, comp = 0, ppmX = 0, ppmY = 0;
   
   if (dibSize === 12) {
+    result.width = readUint16LE(bytes, 18);
+    result.height = readUint16LE(bytes, 20);
     bpp = readUint16LE(bytes, 24);
     result.extra += ', OS/2 формат';
   } else if (dibSize >= 40) {
+    result.width = readUint32LE(bytes, 18);
+    result.height = Math.abs(readUint32LE(bytes, 22));
     bpp = readUint16LE(bytes, 28);
     comp = readUint32LE(bytes, 30);
     ppmX = readUint32LE(bytes, 38);
     ppmY = readUint32LE(bytes, 42);
     result.extra += ', Windows формат';
+    
+    if (ppmX > 0 && ppmY > 0) {
+      result.dpi = [ppmX / 39.3701, ppmY / 39.3701];
+    }
   } else {
+    result.width = readUint32LE(bytes, 18);
+    result.height = Math.abs(readUint32LE(bytes, 22));
     bpp = readUint16LE(bytes, 28);
     result.extra += ', неизвестный DIB=' + dibSize;
   }
@@ -327,17 +304,19 @@ function parseBMP(bytes) {
   const compressMap = { 0:'None', 1:'RLE-8', 2:'RLE-4', 3:'Bitfields', 4:'JPEG', 5:'PNG' };
   result.compress = compressMap[comp] || 'Unknown(' + comp + ')';
   
-  if (ppmX > 0 && ppmY > 0) {
-    result.dpi = [ppmX / 39.3701, ppmY / 39.3701];
-  }
-  
   return result;
 }
 
-// Парсинг JPEG файла
+// Парсинг JPEG файла (ИСПРАВЛЕНО — теперь заполняет extra)
 function parseJPEG(bytes) {
-  const result = { dpi: null, depth: null, compress: 'baseline JPEG', extra: '' };
+  const result = { dpi: null, depth: null, compress: 'baseline JPEG', extra: '', width: 0, height: 0 };
   let off = 2;
+  
+  let components = 0;
+  let precision = 0;
+  let hasEXIF = false;
+  let hasICC = false;
+  let hasThumbnail = false;
   
   while (off < bytes.length - 1) {
     if (bytes[off] !== 0xFF) break;
@@ -357,9 +336,38 @@ function parseJPEG(bytes) {
       if (unit === 2) result.dpi = [dpiX * 2.54, dpiY * 2.54];
       else if (unit === 1) result.dpi = [dpiX, dpiY];
     }
+    else if (marker === 0xE1 && len >= 6) {
+      // APP1 — EXIF данные
+      const exifHeader = String.fromCharCode(
+        bytes[off+2], bytes[off+3], bytes[off+4], bytes[off+5]
+      );
+      if (exifHeader === 'Exif') {
+        hasEXIF = true;
+      }
+    }
+    else if (marker === 0xE2 && len >= 6) {
+      // APP2 — ICC профиль
+      const iccHeader = String.fromCharCode(
+        bytes[off+2], bytes[off+3], bytes[off+4], bytes[off+5]
+      );
+      if (iccHeader === 'ICC_') {
+        hasICC = true;
+      }
+    }
+    else if (marker === 0xE1 && len >= 6) {
+      // APP1 — может быть также.thumbnail (JFIF thumbnail)
+      const thumbHeader = String.fromCharCode(
+        bytes[off+2], bytes[off+3], bytes[off+4], bytes[off+5]
+      );
+      if (thumbHeader === 'JFIF') {
+        hasThumbnail = true;
+      }
+    }
     else if ((marker === 0xC0 || marker === 0xC2) && len >= 8) {
-      const precision = bytes[off+2];
-      const components = bytes[off+7];
+      precision = bytes[off+2];
+      result.height = readUint16BE(bytes, off+3);
+      result.width = readUint16BE(bytes, off+5);
+      components = bytes[off+7];
       result.depth = precision * components;
       if (marker === 0xC2) result.compress = 'progressive JPEG';
     }
@@ -367,12 +375,38 @@ function parseJPEG(bytes) {
     off += len;
   }
   
+  // Формируем строку дополнительной информации
+  const extraParts = [];
+  
+  if (components > 0) {
+    const channelNames = { 1: 'Grayscale', 3: 'YCbCr', 4: 'CMYK' };
+    extraParts.push(channelNames[components] || components + ' каналов');
+  }
+  
+  if (precision > 0) {
+    extraParts.push(precision + ' бит/канал');
+  }
+  
+  if (hasEXIF) {
+    extraParts.push('EXIF');
+  }
+  
+  if (hasICC) {
+    extraParts.push('ICC-профиль');
+  }
+  
+  if (hasThumbnail) {
+    extraParts.push('thumbnail');
+  }
+  
+  result.extra = extraParts.length > 0 ? extraParts.join(', ') : 'стандартный JPEG';
+  
   return result;
 }
 
 // Парсинг PNG файла
 function parsePNG(bytes) {
-  const result = { dpi: null, depth: null, compress: 'deflate', extra: '' };
+  const result = { dpi: null, depth: null, compress: 'deflate', extra: '', width: 0, height: 0 };
   let off = 8;
   
   while (off < bytes.length - 8) {
@@ -380,6 +414,8 @@ function parsePNG(bytes) {
     const type = String.fromCharCode(bytes[off+4], bytes[off+5], bytes[off+6], bytes[off+7]);
     
     if (type === 'IHDR' && len >= 13) {
+      result.width = readUint32BE(bytes, off+8);
+      result.height = readUint32BE(bytes, off+12);
       const bitDepth = bytes[off+16];
       const colorType = bytes[off+17];
       const channels = [1,0,3,1,2,0,4][colorType] || 1;
@@ -402,8 +438,11 @@ function parsePNG(bytes) {
 
 // Парсинг GIF файла
 function parseGIF(bytes) {
-  const result = { dpi: null, depth: null, compress: 'LZW', extra: '' };
+  const result = { dpi: null, depth: null, compress: 'LZW', extra: '', width: 0, height: 0 };
   if (bytes.length < 13) return result;
+  
+  result.width = readUint16LE(bytes, 6);
+  result.height = readUint16LE(bytes, 8);
   
   const packed = bytes[10];
   const gctFlag = (packed >> 7) & 1;
@@ -419,7 +458,7 @@ function parseGIF(bytes) {
 
 // Парсинг TIFF файла
 function parseTIFF(bytes) {
-  const result = { dpi: null, depth: null, compress: 'Unknown', extra: '' };
+  const result = { dpi: null, depth: null, compress: 'Unknown', extra: '', width: 0, height: 0 };
   if (bytes.length < 8) return result;
   
   const le = bytes[0] === 0x49;
@@ -455,6 +494,9 @@ function parseTIFF(bytes) {
     ifdOff = read32(bytes, ifdOff + 2 + count*12);
   }
 
+  result.width = tags[256] || 0;
+  result.height = tags[257] || 0;
+  
   const bps = tags[258] || 8;
   const spp = tags[277] || 1;
   result.depth = bps * spp;
@@ -474,7 +516,7 @@ function parseTIFF(bytes) {
 
 // Парсинг PCX файла
 function parsePCX(bytes) {
-  const result = { dpi: null, depth: null, compress: 'None', extra: '' };
+  const result = { dpi: null, depth: null, compress: 'None', extra: '', width: 0, height: 0 };
   if (bytes.length < 128) return result;
   
   const bpp = bytes[3];
@@ -483,6 +525,13 @@ function parsePCX(bytes) {
   const vDpi = readUint16LE(bytes, 14);
   const encoding = bytes[2];
   const ver = bytes[1];
+  
+  const xmin = readUint16LE(bytes, 4);
+  const xmax = readUint16LE(bytes, 6);
+  const ymin = readUint16LE(bytes, 8);
+  const ymax = readUint16LE(bytes, 10);
+  result.width = xmax - xmin + 1;
+  result.height = ymax - ymin + 1;
   
   result.depth = bpp * numPlanes;
   result.compress = encoding === 1 ? 'RLE' : 'None';
@@ -522,7 +571,7 @@ async function processFile(file) {
 
   const dims = await getImageDimensions(file);
   
-  let binInfo = { dpi: null, depth: null, compress: '—', extra: '' };
+  let binInfo = { dpi: null, depth: null, compress: '—', extra: '', width: 0, height: 0 };
   
   try {
     const fullHeader = new Uint8Array(await file.slice(0, 65536).arrayBuffer());
@@ -537,11 +586,19 @@ async function processFile(file) {
     console.error('Parse error for', file.name, e);
   }
 
+  const finalWidth = dims.w > 0 ? dims.w : (binInfo.width || 0);
+  const finalHeight = dims.h > 0 ? dims.h : (binInfo.height || 0);
+  
+  let finalDpi = binInfo.dpi;
+  if (!finalDpi) {
+    finalDpi = calculateDefaultDPI(format);
+  }
+
   return {
     file,
     format,
-    dims: dims.w > 0 && dims.h > 0 ? dims.w + ' × ' + dims.h : '—',
-    dpi: binInfo.dpi ? fmtDPI(binInfo.dpi[0], binInfo.dpi[1]) : '—',
+    dims: finalWidth > 0 && finalHeight > 0 ? finalWidth + ' × ' + finalHeight : '—',
+    dpi: finalDpi ? fmtDPI(finalDpi[0], finalDpi[1]) : '—',
     depth: binInfo.depth || '—',
     compress: binInfo.compress || '—',
     extra: binInfo.extra || '—'
@@ -608,12 +665,12 @@ function appendRow(r) {
 
 // Экспорт результатов в CSV
 function exportCSV() {
-  const headers = ['Имя файла','Формат','Размер файла','Ширина','Высота','DPI X','DPI Y','Глубина цвета','Сжатие'];
+  const headers = ['Имя файла','Формат','Размер файла','Ширина','Высота','DPI X','DPI Y','Глубина цвета','Сжатие','Доп. информация'];
   const rows = results.map(r => {
     const dims = (r.dims||'—').split('×').map(s=>s.trim());
     const dpi = (r.dpi||'—').split('×').map(s=>s.trim());
     return [r.file.name, r.format?.toUpperCase()||'', fmtSize(r.file.size),
-            dims[0]||'', dims[1]||'', dpi[0]||'', dpi[1]||'', r.depth||'', r.compress||''];
+            dims[0]||'', dims[1]||'', dpi[0]||'', dpi[1]||'', r.depth||'', r.compress||'', r.extra||''];
   });
   const csv = [headers, ...rows]
     .map(row => row.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(';'))
