@@ -1,335 +1,704 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Обработка изображений (Горизонтальное сравнение)</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f9;
-            color: #333;
-            text-align: center;
-        }
-        h1 {
-            margin-bottom: 20px;
-        }
-        .controls {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            display: inline-block;
-            text-align: left;
-        }
-        .controls label, .controls select, .controls button {
-            margin: 8px;
-            font-size: 14px;
-        }
-        .workflow-container {
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            gap: 20px;
-            flex-wrap: wrap;
-            width: 100%;
-        }
-        .canvas-box {
-            background: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            text-align: center;
-            flex: 1;
-            min-width: 300px;
-            max-width: 550px;
-            box-sizing: border-box;
-        }
-        .canvas-box h3 {
-            margin-top: 0;
-            color: #555;
-        }
-        canvas {
-            width: 100%;
-            height: auto;
-            border: 1px solid #ddd;
-            background-color: #eee;
-            border-radius: 4px;
-        }
-        button {
-            padding: 8px 16px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Лабораторная работа 3</title>
+  <style>
+:root {
+  --bg: #15161a;
+  --panel: #1d1f24;
+  --panel-2: #24262c;
+  --border: #33353c;
+  --text: #eae7e1;
+  --text-dim: #9a9ca3;
+  --text-faint: #63656c;
+  --accent: #315efb;
+  --accent-dark: #244bd6;
+  --accent-soft: #2a2f3e;
+  --sans: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+  --mono: 'Cascadia Code', 'JetBrains Mono', Consolas, 'SFMono-Regular', Menlo, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100vh; overflow: hidden; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.topbar h1 {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+.file-button {
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  font-family: var(--sans);
+}
+.file-button:hover { border-color: var(--text-faint); }
+.file-button input { display: none; }
+
+.layout { display: flex; flex: 1; gap: 14px; padding: 14px; overflow: hidden; }
+
+.sidebar {
+  width: 240px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+.sidebar h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  letter-spacing: 0.3px;
+}
+.field { margin-bottom: 10px; }
+.field > span {
+  display: block;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 500;
+  margin-bottom: 5px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.field select, .field input[type="range"] {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-family: var(--sans);
+}
+.field select:focus, .field input[type="range"]:focus {
+  outline: none;
+  border-color: var(--text-dim);
+}
+.field input[type="checkbox"] {
+  accent-color: var(--accent);
+  margin-right: 6px;
+}
+
+.button {
+  border: 0;
+  border-radius: 4px;
+  padding: 9px 12px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 8px;
+  font-size: 13px;
+  font-family: var(--sans);
+  letter-spacing: 0.2px;
+}
+.button.primary { background: var(--accent); color: #fff; }
+.button.primary:hover:not(:disabled) { background: var(--accent-dark); }
+.button.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+.button.secondary:hover:not(:disabled) { border-color: var(--text-faint); }
+.button:disabled { opacity: 0.4; cursor: not-allowed; }
+.hidden { display: none !important; }
+.progress-wrap { margin-top: 12px; }
+.progress-track { height: 4px; background: var(--panel-2); border-radius: 4px; overflow: hidden; }
+.progress-bar { width: 0%; height: 100%; background: var(--accent); transition: width 0.15s; }
+
+.workspace { flex: 1; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+
+.canvas-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; flex: 1; min-height: 0; }
+.image-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+.image-card h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
+}
+.method-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  padding: 4px 10px;
+  background: var(--panel-2);
+  border-radius: 4px;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+.canvas-shell {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel-2);
+  overflow: hidden;
+  min-height: 0;
+}
+.canvas-shell canvas { max-width: 100%; max-height: 100%; }
+
+.histogram-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; height: 110px; flex-shrink: 0; }
+.histogram-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+}
+.histogram-card h2 {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-dim);
+  letter-spacing: 0.3px;
+}
+.histogram-grid canvas {
+  width: 100%;
+  height: 75px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel-2);
+}
+
+.result-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; flex-shrink: 0; }
+.result-grid > div {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.result-grid span {
+  display: block;
+  color: var(--text-faint);
+  font-size: 10px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+.result-grid strong {
+  display: block;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+  </style>
 </head>
 <body>
+  <header class="topbar">
+    <h1>Лабораторная работа 3 — Обработка изображений</h1>
+    <label class="file-button">
+      Загрузить изображение
+      <input id="fileInput" type="file" accept="image/*">
+    </label>
+  </header>
 
-    <h1>Обработка изображений</h1>
-
-    <div class="controls">
-        <input type="file" id="upload" accept="image/*"><br>
-        
-        <label for="method">Метод:</label>
-        <select id="method">
-            <option value="grayscale">Оттенки серого (ITU-R BT.601)</option>
-            <option value="otsu">Бинаризация по методу Оцу</option>
-            <option value="iterative">Итеративный порог (Изодата)</option>
-            <option value="adaptive">Адаптивный порог (Гонсалес-Вудс)</option>
-            <option value="median">Медианный фильтр</option>
-            <option value="min">Фильтр минимума</option>
-            <option value="max">Фильтр максимума</option>
+  <main class="layout">
+    <aside class="sidebar">
+      <h2>Метод обработки</h2>
+      <label class="field">
+        <span>Раздел</span>
+        <select id="categorySelect">
+          <option value="global">Глобальная пороговая обработка</option>
+          <option value="adaptive">Адаптивная пороговая обработка</option>
+          <option value="rank">Нелинейные фильтры</option>
         </select>
+      </label>
+      <div id="methodControls"></div>
+      <button id="processBtn" class="button primary" disabled>Обработать</button>
+      <button id="compareBtn" class="button secondary hidden">Сравнить два метода</button>
+      <div class="progress-wrap">
+        <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+      </div>
+    </aside>
 
-        <label><input type="checkbox" id="invert"> Инвертировать</label>
-        <br style="clear: both;">
-        <div style="text-align: center; margin-top: 10px;">
-            <button id="processBtn">Обработать изображение</button>
-        </div>
-    </div>
+    <section class="workspace">
+      <div class="canvas-grid">
+        <article class="image-card">
+          <h2>Исходное изображение</h2>
+          <div class="canvas-shell"><canvas id="sourceCanvas"></canvas></div>
+        </article>
+        <article class="image-card">
+          <h2 id="resultTitle">Результат</h2>
+          <div id="resultLabel" class="method-label hidden"></div>
+          <div class="canvas-shell"><canvas id="resultCanvas"></canvas></div>
+        </article>
+        <article class="image-card hidden" id="compareCard">
+          <h2 id="compareTitle">Результат 2</h2>
+          <div id="compareLabel" class="method-label hidden"></div>
+          <div class="canvas-shell"><canvas id="compareCanvas"></canvas></div>
+        </article>
+      </div>
+      <div class="histogram-grid">
+        <article class="histogram-card">
+          <h2>Гистограмма до</h2>
+          <canvas id="histBefore" width="700" height="220"></canvas>
+        </article>
+        <article class="histogram-card">
+          <h2>Гистограмма после (метод 1)</h2>
+          <canvas id="histAfter" width="700" height="220"></canvas>
+        </article>
+        <article class="histogram-card hidden" id="histCompareCard">
+          <h2>Гистограмма после (метод 2)</h2>
+          <canvas id="histCompare" width="700" height="220"></canvas>
+        </article>
+      </div>
+      <div class="result-grid">
+        <div><span>Метод</span><strong id="metricMethod">—</strong></div>
+        <div><span>Время</span><strong id="metricTime">—</strong></div>
+        <div><span>Параметры</span><strong id="metricParams">—</strong></div>
+      </div>
+    </section>
+  </main>
 
-    <div class="workflow-container">
-        <div class="canvas-box">
-            <h3>Оригинальное изображение</h3>
-            <canvas id="inputCanvas"></canvas>
-        </div>
-        
-        <div class="canvas-box">
-            <h3>Результат обработки</h3>
-            <canvas id="outputCanvas"></canvas>
-        </div>
-    </div>
+  <script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const state = { width: 0, height: 0, rgba: null, gray: null };
 
-    <script>
-        /* Преобразует пиксели в оттенки серого по формуле ITU-R BT.601 */
-        function toGrayscale(rgba, w, h) {
-          const gray = new Uint8ClampedArray(w * h);
-          for (let i = 0, p = 0; i < gray.length; i++, p += 4) {
-            gray[i] = 0.299 * rgba[p] + 0.587 * rgba[p + 1] + 0.114 * rgba[p + 2];
+  const sourceCanvas = $('sourceCanvas');
+  const resultCanvas = $('resultCanvas');
+  const compareCanvas = $('compareCanvas');
+  const sourceCtx = sourceCanvas.getContext('2d', { willReadFrequently: true });
+  const resultCtx = resultCanvas.getContext('2d', { willReadFrequently: true });
+  const compareCtx = compareCanvas.getContext('2d', { willReadFrequently: true });
+
+  function setProgress(value) {
+    $('progressBar').style.width = Math.round(value * 100) + '%';
+  }
+
+  function drawRgba(canvas, ctx, rgba, width, height) {
+    canvas.width = width; canvas.height = height;
+    ctx.putImageData(new ImageData(new Uint8ClampedArray(rgba), width, height), 0, 0);
+  }
+
+  function drawGray(canvas, ctx, gray, width, height) {
+    const rgba = new Uint8ClampedArray(gray.length * 4);
+    for (let i = 0, p = 0; i < gray.length; i++, p += 4) {
+      rgba[p] = gray[i]; rgba[p+1] = gray[i]; rgba[p+2] = gray[i]; rgba[p+3] = 255;
+    }
+    drawRgba(canvas, ctx, rgba, width, height);
+  }
+
+  function drawEmpty(canvas, ctx, text) {
+    canvas.width = 400; canvas.height = 250;
+    ctx.fillStyle = '#24262c'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#63656c'; ctx.font = '15px "Segoe UI", system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+  }
+
+  function drawHistogram(canvas, gray) {
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width, height = canvas.height;
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = '#24262c'; ctx.fillRect(0, 0, width, height);
+    if (!gray) return;
+    const histogram = new Uint32Array(256);
+    for (let i = 0; i < gray.length; i++) histogram[gray[i]]++;
+    let max = 1;
+    for (let i = 0; i < 256; i++) if (histogram[i] > max) max = histogram[i];
+    const barWidth = width / 256;
+    ctx.fillStyle = '#315efb';
+    for (let i = 0; i < 256; i++) {
+      const barHeight = (histogram[i] / max) * (height - 5);
+      ctx.fillRect(i * barWidth, height - barHeight, Math.max(1, barWidth), barHeight);
+    }
+  }
+
+  function rgbaToGray(rgba, width, height) {
+    const gray = new Uint8Array(width * height);
+    for (let i = 0, p = 0; p < gray.length; i += 4, p++) {
+      gray[p] = Math.round(0.299 * rgba[i] + 0.587 * rgba[i+1] + 0.114 * rgba[i+2]);
+    }
+    return gray;
+  }
+
+  function otsuThreshold(gray) {
+    const histogram = new Uint32Array(256);
+    for (let i = 0; i < gray.length; i++) histogram[gray[i]]++;
+    const total = gray.length;
+    let weightedSum = 0;
+    for (let i = 0; i < 256; i++) weightedSum += i * histogram[i];
+    let backgroundWeight = 0, backgroundSum = 0, bestThreshold = 0, bestVariance = -1;
+    for (let threshold = 0; threshold < 256; threshold++) {
+      backgroundWeight += histogram[threshold];
+      if (backgroundWeight === 0) continue;
+      const foregroundWeight = total - backgroundWeight;
+      if (foregroundWeight === 0) break;
+      backgroundSum += threshold * histogram[threshold];
+      const backgroundMean = backgroundSum / backgroundWeight;
+      const foregroundMean = (weightedSum - backgroundSum) / foregroundWeight;
+      const difference = backgroundMean - foregroundMean;
+      const variance = backgroundWeight * foregroundWeight * difference * difference;
+      if (variance > bestVariance) { bestVariance = variance; bestThreshold = threshold; }
+    }
+    return bestThreshold;
+  }
+
+  function intermeansThreshold(gray) {
+    let min = 255, max = 0;
+    for (let i = 0; i < gray.length; i++) {
+      if (gray[i] < min) min = gray[i];
+      if (gray[i] > max) max = gray[i];
+    }
+    let threshold = (min + max) / 2;
+    let iterations = 0;
+    while (iterations < 100) {
+      let lowSum = 0, lowCount = 0, highSum = 0, highCount = 0;
+      for (let i = 0; i < gray.length; i++) {
+        if (gray[i] <= threshold) { lowSum += gray[i]; lowCount++; }
+        else { highSum += gray[i]; highCount++; }
+      }
+      if (lowCount === 0 || highCount === 0) break;
+      const next = 0.5 * (lowSum / lowCount + highSum / highCount);
+      if (Math.abs(next - threshold) < 0.5) { threshold = next; iterations++; break; }
+      threshold = next;
+      iterations++;
+    }
+    return { threshold: Math.round(threshold), iterations };
+  }
+
+  function applyGlobalThreshold(gray, threshold, invert) {
+    const output = new Uint8Array(gray.length);
+    for (let i = 0; i < gray.length; i++) {
+      const white = gray[i] > threshold;
+      output[i] = white !== invert ? 255 : 0;
+    }
+    return output;
+  }
+
+  function buildIntegralImages(gray, width, height) {
+    const stride = width + 1;
+    const size = stride * (height + 1);
+    const sum = new Float64Array(size);
+    const sqSum = new Float64Array(size);
+    for (let y = 1; y <= height; y++) {
+      let rowSum = 0, rowSqSum = 0;
+      const srcRow = (y - 1) * width;
+      const currentRow = y * stride;
+      const previousRow = (y - 1) * stride;
+      for (let x = 1; x <= width; x++) {
+        const value = gray[srcRow + x - 1];
+        rowSum += value; rowSqSum += value * value;
+        sum[currentRow + x] = sum[previousRow + x] + rowSum;
+        sqSum[currentRow + x] = sqSum[previousRow + x] + rowSqSum;
+      }
+    }
+    return { sum, sqSum, stride };
+  }
+
+  function rectangleSum(integral, stride, x0, y0, x1, y1) {
+    return integral[(y1+1)*stride+(x1+1)] - integral[y0*stride+(x1+1)] - integral[(y1+1)*stride+x0] + integral[y0*stride+x0];
+  }
+
+  function sauvolaThreshold(gray, width, height, radius, k) {
+    const integrals = buildIntegralImages(gray, width, height);
+    const output = new Uint8Array(gray.length);
+    const dynamicRange = 128;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const x0 = Math.max(0, x - radius), y0 = Math.max(0, y - radius);
+        const x1 = Math.min(width - 1, x + radius), y1 = Math.min(height - 1, y + radius);
+        const count = (x1 - x0 + 1) * (y1 - y0 + 1);
+        const sum = rectangleSum(integrals.sum, integrals.stride, x0, y0, x1, y1);
+        const sqSum = rectangleSum(integrals.sqSum, integrals.stride, x0, y0, x1, y1);
+        const mean = sum / count;
+        const variance = Math.max(0, sqSum / count - mean * mean);
+        const stdDev = Math.sqrt(variance);
+        const threshold = mean * (1 + k * (stdDev / dynamicRange - 1));
+        output[y * width + x] = gray[y * width + x] > threshold ? 255 : 0;
+      }
+    }
+    return output;
+  }
+
+  function medianFilter(gray, width, height, radius) {
+    const output = new Uint8Array(gray.length);
+    const histogram = new Uint32Array(256);
+    const windowSize = (2 * radius + 1) * (2 * radius + 1);
+    const target = Math.floor(windowSize / 2);
+
+    function findMedian() {
+      let sum = 0;
+      for (let v = 0; v < 256; v++) {
+        sum += histogram[v];
+        if (sum > target) return v;
+      }
+      return 255;
+    }
+    function addPixel(x, y) {
+      const nx = Math.max(0, Math.min(width - 1, x));
+      const ny = Math.max(0, Math.min(height - 1, y));
+      histogram[gray[ny * width + nx]]++;
+    }
+    function removePixel(x, y) {
+      const nx = Math.max(0, Math.min(width - 1, x));
+      const ny = Math.max(0, Math.min(height - 1, y));
+      histogram[gray[ny * width + nx]]--;
+    }
+
+    for (let y = 0; y < height; y++) {
+      if (y === 0) {
+        histogram.fill(0);
+        for (let dy = -radius; dy <= radius; dy++) {
+          for (let dx = -radius; dx <= radius; dx++) {
+            addPixel(0 + dx, y + dy);
           }
-          return gray;
         }
-
-        /* Подсчитывает количество пикселей для каждого из 256 уровней яркости */
-        function histogram256(gray) {
-          const hist = new Uint32Array(256);
-          for (let i = 0; i < gray.length; i++) hist[gray[i]]++;
-          return hist;
+      } else {
+        const removeX = 0 - radius - 1;
+        const addX = 0 + radius;
+        for (let dy = -radius; dy <= radius; dy++) {
+          removePixel(removeX, y + dy);
+          addPixel(addX, y + dy);
         }
-
-        /* Вычисляет оптимальный порог бинаризации методом Оцу */
-        function otsuThreshold(hist) {
-          const total = hist.reduce((a, b) => a + b, 0);
-          let sumAll = 0;
-          for (let i = 0; i < 256; i++) sumAll += i * hist[i];
-
-          let sumB = 0, weightB = 0, best = 0, bestVar = -1;
-          for (let t = 0; t < 256; t++) {
-            weightB += hist[t];
-            if (weightB === 0) continue;
-            const weightF = total - weightB;
-            if (weightF === 0) break;
-            sumB += t * hist[t];
-            const meanB = sumB / weightB;
-            const meanF = (sumAll - sumB) / weightF;
-            const between = weightB * weightF * (meanB - meanF) * (meanB - meanF);
-            if (between > bestVar) { bestVar = between; best = t; }
-          }
-          return best;
+      }
+      output[y * width] = findMedian();
+      for (let x = 1; x < width; x++) {
+        const removeX = x - radius - 1;
+        const addX = x + radius;
+        for (let dy = -radius; dy <= radius; dy++) {
+          removePixel(removeX, y + dy);
+          addPixel(addX, y + dy);
         }
+        output[y * width + x] = findMedian();
+      }
+    }
+    return output;
+  }
 
-        /* Находит порог бинаризации итеративным методом изодаты */
-        function iterativeThreshold(hist) {
-          let sumAll = 0, total = 0;
-          for (let i = 0; i < 256; i++) { sumAll += i * hist[i]; total += hist[i]; }
-          let T = sumAll / total;
-          let prevT = -1, guard = 0;
-          while (Math.abs(T - prevT) >= 0.5 && guard < 200) {
-            prevT = T;
-            let s1 = 0, c1 = 0, s2 = 0, c2 = 0;
-            for (let i = 0; i < 256; i++) {
-              if (i <= T) { s1 += i * hist[i]; c1 += hist[i]; }
-              else { s2 += i * hist[i]; c2 += hist[i]; }
+  function loadImageUrl(url) {
+    setProgress(0.1);
+    const image = new Image();
+    image.onload = function () {
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth || image.width;
+      canvas.height = image.naturalHeight || image.height;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(image, 0, 0);
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      state.width = canvas.width; state.height = canvas.height;
+      state.rgba = new Uint8ClampedArray(data.data);
+      state.gray = rgbaToGray(state.rgba, state.width, state.height);
+      drawRgba(sourceCanvas, sourceCtx, state.rgba, state.width, state.height);
+      drawHistogram($('histBefore'), state.gray);
+      $('processBtn').disabled = false;
+      $('compareBtn').disabled = false;
+      setProgress(1);
+    };
+    image.src = url;
+  }
+
+  function renderControls() {
+    const category = $('categorySelect').value;
+    const container = $('methodControls');
+    if (category === 'global') {
+      container.innerHTML = '<label class="field"><span>Метод</span><select id="globalMethod"><option value="otsu">Otsu</option><option value="intermeans">Iterative Intermeans</option></select></label><label class="field" style="display:flex;align-items:center;gap:6px;margin-top:4px;"><input type="checkbox" id="invert"><span style="margin:0;text-transform:none;font-size:12px;">Инвертировать</span></label>';
+      $('compareBtn').classList.remove('hidden');
+    } else if (category === 'adaptive') {
+      container.innerHTML = '<label class="field"><span>Радиус</span><input type="range" id="adaptiveRadius" min="3" max="40" value="15"></label><label class="field"><span>Коэффициент k</span><input type="range" id="adaptiveK" min="0.05" max="0.80" step="0.01" value="0.34"></label>';
+      $('compareBtn').classList.add('hidden');
+    } else {
+      container.innerHTML = '<label class="field"><span>Радиус</span><input type="range" id="rankRadius" min="1" max="6" value="1"></label>';
+      $('compareBtn').classList.add('hidden');
+    }
+  }
+
+  function processCurrent() {
+    if (!state.gray) return;
+    const category = $('categorySelect').value;
+    const started = performance.now();
+    setProgress(0.1);
+
+    if (category === 'rank') {
+      const radius = parseInt($('rankRadius').value);
+      $('processBtn').disabled = true;
+      const chunkSize = 20;
+      let y = 0;
+      const output = new Uint8Array(state.width * state.height);
+      const histogram = new Uint32Array(256);
+      const windowSize = (2 * radius + 1) * (2 * radius + 1);
+      const target = Math.floor(windowSize / 2);
+
+      function findMedian() {
+        let sum = 0;
+        for (let v = 0; v < 256; v++) { sum += histogram[v]; if (sum > target) return v; }
+        return 255;
+      }
+      function addPixel(x, y) {
+        const nx = Math.max(0, Math.min(state.width - 1, x));
+        const ny = Math.max(0, Math.min(state.height - 1, y));
+        histogram[state.gray[ny * state.width + nx]]++;
+      }
+      function removePixel(x, y) {
+        const nx = Math.max(0, Math.min(state.width - 1, x));
+        const ny = Math.max(0, Math.min(state.height - 1, y));
+        histogram[state.gray[ny * state.width + nx]]--;
+      }
+
+      function processChunk() {
+        const endY = Math.min(y + chunkSize, state.height);
+        for (; y < endY; y++) {
+          if (y === 0) {
+            histogram.fill(0);
+            for (let dy = -radius; dy <= radius; dy++) {
+              for (let dx = -radius; dx <= radius; dx++) { addPixel(0 + dx, y + dy); }
             }
-            const m1 = c1 ? s1 / c1 : 0;
-            const m2 = c2 ? s2 / c2 : 0;
-            T = (m1 + m2) / 2;
-            guard++;
-          }
-          return Math.round(T);
-        }
-
-        /* Применяет бинаризацию с фиксированным порогом и возможностью инверсии */
-        function applyFixedThreshold(gray, T, invert) {
-          const out = new Uint8ClampedArray(gray.length);
-          for (let i = 0; i < gray.length; i++) {
-            let isObject = gray[i] <= T;
-            if (invert) isObject = !isObject;
-            out[i] = isObject ? 0 : 255;
-          }
-          return out;
-        }
-
-        /* Выполняет адаптивную бинаризацию на основе скользящего среднего */
-        function adaptiveMovingAverageThreshold(gray, w, h, n, b, invert) {
-          const out = new Uint8ClampedArray(w * h);
-          const buf = new Float64Array(n);
-          let bufIdx = 0, filled = 0, sum = 0;
-          for (let row = 0; row < h; row++) {
-            const leftToRight = (row % 2 === 0);
-            for (let col = 0; col < w; col++) {
-              const x = leftToRight ? col : (w - 1 - col);
-              const idx = row * w + x;
-              const val = gray[idx];
-              if (filled < n) { buf[bufIdx] = val; sum += val; filled++; }
-              else { sum -= buf[bufIdx]; buf[bufIdx] = val; sum += val; }
-              bufIdx = (bufIdx + 1) % n;
-              const m = sum / filled;
-              let isObject = val <= b * m;
-              if (invert) isObject = !isObject;
-              out[idx] = isObject ? 0 : 255;
-            }
-          }
-          return out;
-        }
-
-        /* Применяет медианный фильтр или фильтры минимума и максимума */
-        function orderStatisticFilter(rgba, w, h, windowSize, statType) {
-          const out = new Uint8ClampedArray(rgba.length);
-          const r = Math.floor(windowSize / 2);
-          const winLen = windowSize * windowSize;
-          const bufR = new Uint8ClampedArray(winLen), bufG = new Uint8ClampedArray(winLen), bufB = new Uint8ClampedArray(winLen);
-
-          /* Ограничивает число заданным диапазоном для защиты от выхода за границы массива */
-          function clampi(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
-
-          for (let y = 0; y < h; y++) {
-            for (let x = 0; x < w; x++) {
-              let k = 0;
-              for (let dy = -r; dy <= r; dy++) {
-                const yy = clampi(y + dy, 0, h - 1);
-                for (let dx = -r; dx <= r; dx++) {
-                  const xx = clampi(x + dx, 0, w - 1);
-                  const si = (yy * w + xx) * 4;
-                  bufR[k] = rgba[si]; bufG[k] = rgba[si + 1]; bufB[k] = rgba[si + 2];
-                  k++;
-                }
-              }
-              let rv, gv, bv;
-              if (statType === 'median') {
-                const sr = Array.from(bufR).sort((a, b) => a - b);
-                const sg = Array.from(bufG).sort((a, b) => a - b);
-                const sb = Array.from(bufB).sort((a, b) => a - b);
-                const mid = winLen >> 1;
-                rv = sr[mid]; gv = sg[mid]; bv = sb[mid];
-              } else if (statType === 'min') {
-                rv = Math.min.apply(null, bufR); gv = Math.min.apply(null, bufG); bv = Math.min.apply(null, bufB);
-              } else {
-                rv = Math.max.apply(null, bufR); gv = Math.max.apply(null, bufG); bv = Math.max.apply(null, bufB);
-              }
-              const di = (y * w + x) * 4;
-              out[di] = rv; out[di + 1] = gv; out[di + 2] = bv; out[di + 3] = rgba[di + 3];
+          } else {
+            for (let dy = -radius; dy <= radius; dy++) {
+              removePixel(0 - radius - 1, y + dy);
+              addPixel(0 + radius, y + dy);
             }
           }
-          return out;
+          output[y * state.width] = findMedian();
+          for (let x = 1; x < state.width; x++) {
+            for (let dy = -radius; dy <= radius; dy++) {
+              removePixel(x - radius - 1, y + dy);
+              addPixel(x + radius, y + dy);
+            }
+            output[y * state.width + x] = findMedian();
+          }
         }
-
-        /* Инициализирует элементы интерфейса и переменные для работы с холстом */
-        const upload = document.getElementById('upload');
-        const inputCanvas = document.getElementById('inputCanvas');
-        const outputCanvas = document.getElementById('outputCanvas');
-        const ctxIn = inputCanvas.getContext('2d');
-        const ctxOut = outputCanvas.getContext('2d');
-        const processBtn = document.getElementById('processBtn');
-
-        let loadedImage = new Image();
-
-        /* Обработчик выбора файла изображения пользователем */
-        upload.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                loadedImage.src = event.target.result;
-            }
-            reader.readAsDataURL(file);
-        });
-
-        /* Обработчик завершения загрузки изображения в память браузера */
-        loadedImage.onload = function() {
-            inputCanvas.width = loadedImage.width;
-            inputCanvas.height = loadedImage.height;
-            outputCanvas.width = loadedImage.width;
-            outputCanvas.height = loadedImage.height;
-
-            ctxIn.drawImage(loadedImage, 0, 0);
-            ctxOut.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+        setProgress(y / state.height);
+        if (y < state.height) { requestAnimationFrame(processChunk); }
+        else {
+          drawGray(resultCanvas, resultCtx, output, state.width, state.height);
+          drawHistogram($('histAfter'), output);
+          $('histCompareCard').classList.add('hidden');
+          $('metricMethod').textContent = 'Медианный фильтр';
+          $('metricTime').textContent = (performance.now() - started).toFixed(1) + ' мс';
+          $('metricParams').textContent = 'радиус = ' + radius;
+          $('compareCard').classList.add('hidden');
+          $('resultLabel').classList.add('hidden');
+          $('resultTitle').textContent = 'Результат';
+          setProgress(1);
+          $('processBtn').disabled = false;
         }
+      }
+      requestAnimationFrame(processChunk);
+      return;
+    }
 
-        /* Обработчик нажатия кнопки для запуска выбранного алгоритма обработки */
-        processBtn.addEventListener('click', () => {
-            if (!loadedImage.src) {
-                alert('Сначала загрузите изображение!');
-                return;
-            }
+    setTimeout(() => {
+      try {
+        if (category === 'global') {
+          const method = $('globalMethod').value;
+          const invert = $('invert').checked;
+          const threshold = otsuThreshold(state.gray);
+          const output = applyGlobalThreshold(state.gray, threshold, invert);
+          drawGray(resultCanvas, resultCtx, output, state.width, state.height);
+          drawHistogram($('histAfter'), output);
+          $('histCompareCard').classList.add('hidden');
+          $('metricMethod').textContent = method === 'otsu' ? 'Otsu' : 'Iterative Intermeans';
+          $('metricTime').textContent = (performance.now() - started).toFixed(1) + ' мс';
+          $('metricParams').textContent = 'порог = ' + threshold;
+          $('compareCard').classList.add('hidden');
+          $('resultLabel').classList.add('hidden');
+          $('resultTitle').textContent = 'Результат';
+        } else if (category === 'adaptive') {
+          const radius = parseInt($('adaptiveRadius').value);
+          const k = parseFloat($('adaptiveK').value);
+          const output = sauvolaThreshold(state.gray, state.width, state.height, radius, k);
+          drawGray(resultCanvas, resultCtx, output, state.width, state.height);
+          drawHistogram($('histAfter'), output);
+          $('histCompareCard').classList.add('hidden');
+          $('metricMethod').textContent = 'Sauvola';
+          $('metricTime').textContent = (performance.now() - started).toFixed(1) + ' мс';
+          $('metricParams').textContent = 'радиус = ' + radius + ', k = ' + k;
+          $('compareCard').classList.add('hidden');
+          $('resultLabel').classList.add('hidden');
+          $('resultTitle').textContent = 'Результат';
+        }
+        setProgress(1);
+      } catch (error) {
+        console.error(error);
+        alert('Ошибка: ' + error.message);
+      }
+    }, 10);
+  }
 
-            const w = inputCanvas.width;
-            const h = inputCanvas.height;
-            const imgData = ctxIn.getImageData(0, 0, w, h);
-            const rgba = imgData.data;
-            const method = document.getElementById('method').value;
-            const invert = document.getElementById('invert').checked;
+  function compareGlobalMethods() {
+    if (!state.gray) return;
+    setProgress(0.1);
+    const started = performance.now();
+    setTimeout(() => {
+      try {
+        const invert = $('invert').checked;
+        const otsu = otsuThreshold(state.gray);
+        const intermeans = intermeansThreshold(state.gray);
+        const output1 = applyGlobalThreshold(state.gray, otsu, invert);
+        const output2 = applyGlobalThreshold(state.gray, intermeans.threshold, invert);
+        drawGray(resultCanvas, resultCtx, output1, state.width, state.height);
+        drawGray(compareCanvas, compareCtx, output2, state.width, state.height);
+        drawHistogram($('histAfter'), output1);
+        drawHistogram($('histCompare'), output2);
+        $('histCompareCard').classList.remove('hidden');
+        $('metricMethod').textContent = 'Otsu / Intermeans';
+        $('metricTime').textContent = (performance.now() - started).toFixed(1) + ' мс';
+        $('metricParams').textContent = 'пороги: ' + otsu + ' / ' + intermeans.threshold;
+        $('compareCard').classList.remove('hidden');
+        $('resultTitle').textContent = 'Otsu';
+        $('resultLabel').textContent = 'Порог: ' + otsu;
+        $('resultLabel').classList.remove('hidden');
+        $('compareTitle').textContent = 'Iterative Intermeans';
+        $('compareLabel').textContent = 'Порог: ' + intermeans.threshold;
+        $('compareLabel').classList.remove('hidden');
+        setProgress(1);
+      } catch (error) {
+        console.error(error);
+        alert('Ошибка: ' + error.message);
+      }
+    }, 10);
+  }
 
-            const outImgData = ctxOut.createImageData(w, h);
-            const outData = outImgData.data;
+  $('categorySelect').addEventListener('change', renderControls);
+  $('processBtn').addEventListener('click', processCurrent);
+  $('compareBtn').addEventListener('click', compareGlobalMethods);
+  $('fileInput').addEventListener('change', function (event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function () { loadImageUrl(reader.result); };
+    reader.readAsDataURL(file);
+  });
 
-            if (method === 'grayscale') {
-                const gray = toGrayscale(rgba, w, h);
-                for (let i = 0, p = 0; i < gray.length; i++, p += 4) {
-                    outData[p] = gray[i];
-                    outData[p+1] = gray[i];
-                    outData[p+2] = gray[i];
-                    outData[p+3] = 255;
-                }
-            } else if (method === 'otsu' || method === 'iterative') {
-                const gray = toGrayscale(rgba, w, h);
-                const hist = histogram256(gray);
-                const T = (method === 'otsu') ? otsuThreshold(hist) : iterativeThreshold(hist);
-                const bin = applyFixedThreshold(gray, T, invert);
-                for (let i = 0, p = 0; i < bin.length; i++, p += 4) {
-                    outData[p] = bin[i];
-                    outData[p+1] = bin[i];
-                    outData[p+2] = bin[i];
-                    outData[p+3] = 255;
-                }
-            } else if (method === 'adaptive') {
-                const gray = toGrayscale(rgba, w, h);
-                const bin = adaptiveMovingAverageThreshold(gray, w, h, 15, 0.9, invert);
-                for (let i = 0, p = 0; i < bin.length; i++, p += 4) {
-                    outData[p] = bin[i];
-                    outData[p+1] = bin[i];
-                    outData[p+2] = bin[i];
-                    outData[p+3] = 255;
-                }
-            } else if (method === 'median' || method === 'min' || method === 'max') {
-                const filtered = orderStatisticFilter(rgba, w, h, 3, method);
-                for (let i = 0; i < filtered.length; i++) {
-                    outData[i] = filtered[i];
-                }
-            }
-
-            ctxOut.putImageData(outImgData, 0, 0);
-        });
-    </script>
+  drawEmpty(sourceCanvas, sourceCtx, 'Загрузите изображение');
+  drawEmpty(resultCanvas, resultCtx, 'Нажмите "Обработать"');
+  drawEmpty(compareCanvas, compareCtx, 'Сравнение');
+  renderControls();
+})();
+  </script>
 </body>
 </html>
