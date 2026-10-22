@@ -8,128 +8,419 @@
 <title>Базовые растровые алгоритмы - Лабораторная №4</title>
 <style>
 :root {
-  font-family: system-ui, -apple-system, sans-serif;
-  font-size: 15px;
-  line-height: 1.5;
-  color: #263249;
-  background: #f6f7f9;
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-light: #818cf8;
+  --bg: #f8fafc;
+  --card-bg: #ffffff;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --radius: 12px;
+  --radius-sm: 8px;
 }
-* { box-sizing: border-box; }
-body { margin: 0; }
-button, select, input { font: inherit; }
-button { cursor: pointer; }
-h1, h2, p { margin: 0; }
-h1 { font-size: 1.8rem; color: #202b3d; margin-bottom: 8px; }
-h2 { font-size: 1.1rem; color: #202b3d; }
-.shell { width: min(1400px, calc(100% - 40px)); margin: 0 auto 40px; }
-.header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #dee4ec; margin-bottom: 24px; }
-.nav { display: flex; gap: 5px; }
-.nav button { padding: 9px 15px; border: 0; border-radius: 8px; background: none; font-weight: 600; color: #58677c; }
-.nav button:hover { background: #e8edf5; }
-.nav button.active { background: #2863bd; color: white; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+}
+
+/* Хедер с градиентом */
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 32px 0;
+  box-shadow: var(--shadow-lg);
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.header p {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin-bottom: 24px;
+}
+
+/* Навигация */
+.nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nav button {
+  padding: 10px 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.1);
+  color: white;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
+}
+
+.nav button:hover {
+  background: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.5);
+  transform: translateY(-1px);
+}
+
+.nav button.active {
+  background: white;
+  color: var(--primary);
+  border-color: white;
+}
+
+/* Основной контейнер */
+.shell {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
 .panel { display: none; }
 .panel.active { display: block; }
-.paper { background: white; border: 1px solid #e0e6ee; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-.workspace { display: grid; grid-template-columns: 280px 1fr; gap: 16px; }
-.field { margin-bottom: 12px; }
-.field label { display: block; font-weight: 600; margin-bottom: 5px; color: #45536a; }
-.field input, .field select { width: 100%; height: 38px; border: 1px solid #d4dce7; border-radius: 7px; padding: 0 10px; }
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.btn-primary { background: #2863bd; color: white; border: 0; border-radius: 8px; padding: 10px 16px; font-weight: 650; width: 100%; }
-.btn-primary:hover { background: #1d519f; }
-.btn-outline { background: white; color: #335b98; border: 1px solid #d9e1ec; border-radius: 7px; padding: 8px 12px; }
-.btn-outline:hover { background: #f0f5fc; }
 
-/* Улучшенный контейнер canvas */
+/* Карточки */
+.paper {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.paper h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+/* Рабочая область */
+.workspace {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* Поля ввода */
+.field {
+  margin-bottom: 16px;
+}
+
+.field label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  height: 42px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: white;
+  transition: all 0.2s;
+}
+
+.field input:focus,
+.field select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Кнопки */
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(99, 102, 241, 0.3);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Canvas контейнер */
 .canvas-wrapper {
   position: relative;
   background: white;
-  border: 1px solid #e0e6ee;
-  border-radius: 8px;
+  border-radius: var(--radius);
   overflow: hidden;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
 }
+
 .canvas-container {
   overflow: auto;
   max-height: 600px;
   position: relative;
 }
+
 canvas {
   display: block;
   cursor: crosshair;
 }
+
 .zoom-controls {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  right: 12px;
   display: flex;
-  gap: 5px;
+  gap: 6px;
   background: white;
-  padding: 5px;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
   z-index: 10;
+  border: 1px solid var(--border);
 }
+
 .zoom-controls button {
-  width: 32px;
-  height: 32px;
-  border: 1px solid #d4dce7;
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--border);
   border-radius: 6px;
   background: white;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
-  color: #2863bd;
+  color: var(--primary);
+  cursor: pointer;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
 .zoom-controls button:hover {
-  background: #f0f5fc;
-}
-.zoom-info {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: rgba(255,255,255,0.95);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #58677c;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  z-index: 10;
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
 }
 
-.stats { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
-.stat { background: white; border: 1px solid #e0e6ee; border-radius: 8px; padding: 12px 16px; }
-.stat small { display: block; color: #6c7b8f; font-size: 0.8rem; }
-.stat strong { font-size: 1.3rem; color: #263249; }
-.theory-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
-.theory-card { padding: 19px; }
-.formula { background: #f3f6fa; padding: 12px; border-radius: 7px; font-family: monospace; margin-top: 12px; font-size: 0.9rem; }
-.check-item { display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #e9edf2; }
-.check-item.pass strong { color: #31764d; }
-.check-item.fail strong { color: #be3443; }
-@media (max-width: 768px) {
-  .workspace, .theory-grid { grid-template-columns: 1fr; }
+.zoom-info {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: white;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  box-shadow: var(--shadow);
+  z-index: 10;
+  border: 1px solid var(--border);
+  font-weight: 500;
+}
+
+/* Статистика */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.stat {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.stat small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.stat strong {
+  font-size: 1.5rem;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* Теория */
+.theory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.theory-card {
+  padding: 24px;
+}
+
+.theory-card h2 {
+  font-size: 1.15rem;
+  margin-bottom: 12px;
+  color: var(--primary);
+}
+
+.theory-card p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.formula {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  font-family: 'Courier New', monospace;
+  margin-top: 12px;
+  font-size: 0.9rem;
+  border-left: 4px solid var(--primary);
+  color: var(--text);
+}
+
+/* Проверки */
+.check-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.check-item:last-child {
+  border-bottom: none;
+}
+
+.check-item.pass strong {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.check-item.fail strong {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+/* Таблица бенчмарка */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+td {
+  color: var(--text);
+}
+
+tr:hover {
+  background: #f8fafc;
+}
+
+/* Адаптивность */
+@media (max-width: 968px) {
+  .workspace, .theory-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .header h1 {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .nav {
+    flex-direction: column;
+  }
+  
+  .nav button {
+    width: 100%;
+  }
 }
 </style>
 </head>
 <body>
-<div class="shell">
-  <header class="header">
+
+<!-- Хедер с градиентом -->
+<header class="header">
+  <div class="header-content">
     <h1>Лабораторная №4</h1>
+    <p>Базовые растровые алгоритмы — визуализация и исследование</p>
     <nav class="nav">
       <button class="active" data-tab="raster">Растеризация</button>
       <button data-tab="benchmark">Замеры времени</button>
       <button data-tab="theory">Теория</button>
       <button data-tab="checks">Проверки</button>
     </nav>
-  </header>
+  </div>
+</header>
 
+<div class="shell">
   <!-- Панель растеризации -->
   <section class="panel active" data-panel="raster">
-    <h1>Базовые растровые алгоритмы</h1>
-    <p style="margin-bottom:20px;color:#627087">Выберите алгоритм и задайте координаты</p>
-    
     <div class="workspace">
       <div class="paper">
         <h2>Параметры</h2>
@@ -181,7 +472,7 @@ canvas {
         <div class="paper">
           <h2>Визуализация</h2>
           <div class="canvas-wrapper">
-            <div class="zoom-info" id="zoom-info">Масштаб: 10 px | Размер клетки: 10×10</div>
+            <div class="zoom-info" id="zoom-info">Масштаб: 10 px</div>
             <div class="zoom-controls">
               <button id="zoom-in" title="Приблизить">+</button>
               <button id="zoom-out" title="Отдалить">−</button>
@@ -212,22 +503,19 @@ canvas {
 
   <!-- Панель бенчмарка -->
   <section class="panel" data-panel="benchmark">
-    <h1>Замеры производительности</h1>
-    <p style="margin-bottom:20px;color:#627087">Сравнение времени работы алгоритмов</p>
-    
     <div class="paper">
-      <h2>Тестирование</h2>
-      <p>Построение 1000 отрезков и 500 окружностей</p>
-      <button class="btn-primary" id="run-benchmark" style="max-width:300px;margin-top:12px">Запустить тест</button>
+      <h2>Замеры производительности</h2>
+      <p style="color: var(--text-muted); margin-bottom: 16px;">Построение 1000 отрезков и 500 окружностей</p>
+      <button class="btn-primary" id="run-benchmark" style="max-width:300px;">Запустить тест</button>
       
-      <div id="benchmark-results" style="margin-top:20px;display:none">
-        <h3>Результаты (мс)</h3>
-        <table style="width:100%;border-collapse:collapse;margin-top:12px">
+      <div id="benchmark-results" style="margin-top:24px;display:none">
+        <h3 style="margin-bottom: 12px;">Результаты (мс)</h3>
+        <table>
           <thead>
-            <tr style="background:#f6f8fb">
-              <th style="padding:10px;text-align:left">Алгоритм</th>
-              <th style="padding:10px;text-align:left">Время (мс)</th>
-              <th style="padding:10px;text-align:left">Пикселей</th>
+            <tr>
+              <th>Алгоритм</th>
+              <th>Время (мс)</th>
+              <th>Пикселей</th>
             </tr>
           </thead>
           <tbody id="benchmark-table"></tbody>
@@ -238,9 +526,6 @@ canvas {
 
   <!-- Панель теории -->
   <section class="panel" data-panel="theory">
-    <h1>Теория растровых алгоритмов</h1>
-    <p style="margin-bottom:20px;color:#627087">Основные принципы и формулы</p>
-    
     <div class="theory-grid">
       <div class="paper theory-card">
         <h2>Виртуальный растр</h2>
@@ -302,20 +587,20 @@ canvas {
 
   <!-- Панель проверок -->
   <section class="panel" data-panel="checks">
-    <h1>Проверка корректности</h1>
-    <p style="margin-bottom:20px;color:#627087">Автоматические тесты алгоритмов</p>
-    
     <div class="paper">
-      <button class="btn-primary" id="run-checks" style="max-width:250px">Запустить проверки</button>
-      <div id="check-summary" style="margin:16px 0;font-weight:600"></div>
+      <h2>Проверка корректности</h2>
+      <p style="color: var(--text-muted); margin-bottom: 16px;">Автоматические тесты алгоритмов</p>
+      <button class="btn-primary" id="run-checks" style="max-width:250px;">Запустить проверки</button>
+      <div id="check-summary" style="margin:16px 0;font-weight:600;font-size:1.1rem;"></div>
       <div id="check-results"></div>
     </div>
   </section>
 </div>
 
 <script>
-
+// ============================================
 // ВИРТУАЛЬНЫЙ РАСТР
+// ============================================
 
 /**
  * Класс виртуального растра - двумерный массив для хранения пикселей
@@ -388,8 +673,9 @@ class VirtualGrid {
   }
 }
 
-
+// ============================================
 // РАСТРОВЫЕ АЛГОРИТМЫ
+// ============================================
 
 /**
  * Пошаговый алгоритм построения отрезка
@@ -509,8 +795,9 @@ function setCirclePoints(grid, cx, cy, x, y) {
   grid.setPixel(cx - y, cy - x);
 }
 
-
+// ============================================
 // ОТРИСОВКА НА CANVAS С ПОДПИСЯМИ КООРДИНАТ
+// ============================================
 
 /**
  * Отрисовка виртуального растра на canvas с координатной сеткой и подписями
@@ -532,7 +819,7 @@ function drawGrid(canvas, grid, cellSize) {
     for (let col = 0; col < grid.width; col++) {
       const intensity = grid.data[row * grid.width + col];
       if (intensity > 0) {
-        ctx.fillStyle = `rgba(40, 99, 189, ${intensity})`;
+        ctx.fillStyle = `rgba(99, 102, 241, ${intensity})`;
         const x = col * cellSize;
         const y = (grid.height - row - 1) * cellSize;
         ctx.fillRect(x, y, cellSize, cellSize);
@@ -541,7 +828,7 @@ function drawGrid(canvas, grid, cellSize) {
   }
   
   // Сетка (тонкие линии)
-  ctx.strokeStyle = '#e8ecf0';
+  ctx.strokeStyle = '#e2e8f0';
   ctx.lineWidth = 1;
   for (let col = 0; col <= grid.width; col++) {
     ctx.beginPath();
@@ -560,7 +847,7 @@ function drawGrid(canvas, grid, cellSize) {
   const axisX = -grid.minX * cellSize;
   const axisY = (grid.height + grid.minY - 1) * cellSize;
   
-  ctx.strokeStyle = '#71839f';
+  ctx.strokeStyle = '#64748b';
   ctx.lineWidth = 2;
   
   if (axisX >= 0 && axisX <= width) {
@@ -580,7 +867,7 @@ function drawGrid(canvas, grid, cellSize) {
   // Подписи координат на осях
   if (cellSize >= 8) {
     ctx.font = '10px system-ui, sans-serif';
-    ctx.fillStyle = '#58677c';
+    ctx.fillStyle = '#64748b';
     
     // Определяем шаг подписей в зависимости от размера клетки
     let labelStep = 10;
@@ -607,8 +894,9 @@ function drawGrid(canvas, grid, cellSize) {
   }
 }
 
-
+// ============================================
 // УПРАВЛЕНИЕ ПРИЛОЖЕНИЕМ
+// ============================================
 
 let grid = new VirtualGrid(81, 61, -40, -30);
 let cellSize = 10; // Уменьшен размер клетки по умолчанию
@@ -632,8 +920,7 @@ document.getElementById('algorithm').addEventListener('change', function() {
 
 /** Обновление информации о масштабе */
 function updateZoomInfo() {
-  document.getElementById('zoom-info').textContent = 
-    `Масштаб: ${cellSize} px | Размер клетки: ${cellSize}×${cellSize}`;
+  document.getElementById('zoom-info').textContent = `Масштаб: ${cellSize} px`;
 }
 
 /** Изменение масштаба */
@@ -734,7 +1021,7 @@ document.getElementById('run-benchmark').addEventListener('click', function() {
   tbody.innerHTML = '';
   results.forEach(r => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td style="padding:8px">${r.name}</td><td style="padding:8px">${r.time}</td><td style="padding:8px">${r.pixels}</td>`;
+    tr.innerHTML = `<td>${r.name}</td><td>${r.time}</td><td>${r.pixels}</td>`;
     tbody.appendChild(tr);
   });
   
@@ -774,8 +1061,7 @@ document.getElementById('run-checks').addEventListener('click', function() {
   
   // Вывод результатов
   const passed = checks.filter(c => c.pass).length;
-  document.getElementById('check-summary').textContent = 
-    `Пройдено: ${passed} из ${checks.length}`;
+  document.getElementById('check-summary').textContent = `Пройдено: ${passed} из ${checks.length}`;
   
   const container = document.getElementById('check-results');
   container.innerHTML = '';
