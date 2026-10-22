@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>Базовые растровые алгоритмы - Лабораторная №4</title>
+<style>
+:root {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #263249;
+  background: #f6f7f9;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, select, input { font: inherit; }
+button { cursor: pointer; }
+h1, h2, p { margin: 0; }
+h1 { font-size: 1.8rem; color: #202b3d; margin-bottom: 8px; }
+h2 { font-size: 1.1rem; color: #202b3d; }
+.shell { width: min(1400px, calc(100% - 40px)); margin: 0 auto 40px; }
+.header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #dee4ec; margin-bottom: 24px; }
+.nav { display: flex; gap: 5px; }
+.nav button { padding: 9px 15px; border: 0; border-radius: 8px; background: none; font-weight: 600; color: #58677c; }
+.nav button:hover { background: #e8edf5; }
+.nav button.active { background: #2863bd; color: white; }
+.panel { display: none; }
+.panel.active { display: block; }
+.paper { background: white; border: 1px solid #e0e6ee; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.workspace { display: grid; grid-template-columns: 280px 1fr; gap: 16px; }
+.field { margin-bottom: 12px; }
+.field label { display: block; font-weight: 600; margin-bottom: 5px; color: #45536a; }
+.field input, .field select { width: 100%; height: 38px; border: 1px solid #d4dce7; border-radius: 7px; padding: 0 10px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-primary { background: #2863bd; color: white; border: 0; border-radius: 8px; padding: 10px 16px; font-weight: 650; width: 100%; }
+.btn-primary:hover { background: #1d519f; }
+.btn-outline { background: white; color: #335b98; border: 1px solid #d9e1ec; border-radius: 7px; padding: 8px 12px; }
+.btn-outline:hover { background: #f0f5fc; }
+
+/* Улучшенный контейнер canvas */
+.canvas-wrapper {
+  position: relative;
+  background: white;
+  border: 1px solid #e0e6ee;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.canvas-container {
+  overflow: auto;
+  max-height: 600px;
+  position: relative;
+}
+canvas {
+  display: block;
+  cursor: crosshair;
+}
+.zoom-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 5px;
+  background: white;
+  padding: 5px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+.zoom-controls button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d4dce7;
+  border-radius: 6px;
+  background: white;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2863bd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.zoom-controls button:hover {
+  background: #f0f5fc;
+}
+.zoom-info {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(255,255,255,0.95);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #58677c;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+.stats { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+.stat { background: white; border: 1px solid #e0e6ee; border-radius: 8px; padding: 12px 16px; }
+.stat small { display: block; color: #6c7b8f; font-size: 0.8rem; }
+.stat strong { font-size: 1.3rem; color: #263249; }
+.theory-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.theory-card { padding: 19px; }
+.formula { background: #f3f6fa; padding: 12px; border-radius: 7px; font-family: monospace; margin-top: 12px; font-size: 0.9rem; }
+.check-item { display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #e9edf2; }
+.check-item.pass strong { color: #31764d; }
+.check-item.fail strong { color: #be3443; }
+@media (max-width: 768px) {
+  .workspace, .theory-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="header">
+    <h1>Лабораторная №4</h1>
+    <nav class="nav">
+      <button class="active" data-tab="raster">Растеризация</button>
+      <button data-tab="benchmark">Замеры времени</button>
+      <button data-tab="theory">Теория</button>
+      <button data-tab="checks">Проверки</button>
+    </nav>
+  </header>
+
+  <!-- Панель растеризации -->
+  <section class="panel active" data-panel="raster">
+    <h1>Базовые растровые алгоритмы</h1>
+    <p style="margin-bottom:20px;color:#627087">Выберите алгоритм и задайте координаты</p>
+    
+    <div class="workspace">
+      <div class="paper">
+        <h2>Параметры</h2>
+        <div class="field">
+          <label>Алгоритм</label>
+          <select id="algorithm">
+            <option value="step">Пошаговый алгоритм</option>
+            <option value="dda">ЦДА (DDA)</option>
+            <option value="bresenham" selected>Брезенхем (отрезок)</option>
+            <option value="circle">Брезенхем (окружность)</option>
+          </select>
+        </div>
+        
+        <div id="line-params">
+          <div class="field">
+            <label>Начало A (x₀, y₀)</label>
+            <div class="two-col">
+              <input id="x0" type="number" value="-20" placeholder="X₀"/>
+              <input id="y0" type="number" value="-15" placeholder="Y₀"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>Конец B (x₁, y₁)</label>
+            <div class="two-col">
+              <input id="x1" type="number" value="25" placeholder="X₁"/>
+              <input id="y1" type="number" value="18" placeholder="Y₁"/>
+            </div>
+          </div>
+        </div>
+        
+        <div id="circle-params" style="display:none">
+          <div class="field">
+            <label>Центр (cx, cy)</label>
+            <div class="two-col">
+              <input id="cx" type="number" value="0" placeholder="Центр X"/>
+              <input id="cy" type="number" value="0" placeholder="Центр Y"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>Радиус</label>
+            <input id="radius" type="number" value="20" min="1"/>
+          </div>
+        </div>
+        
+        <button class="btn-primary" id="draw">Построить</button>
+      </div>
+      
+      <div>
+        <div class="paper">
+          <h2>Визуализация</h2>
+          <div class="canvas-wrapper">
+            <div class="zoom-info" id="zoom-info">Масштаб: 10 px | Размер клетки: 10×10</div>
+            <div class="zoom-controls">
+              <button id="zoom-in" title="Приблизить">+</button>
+              <button id="zoom-out" title="Отдалить">−</button>
+              <button id="zoom-reset" title="Сбросить">⟲</button>
+            </div>
+            <div class="canvas-container" id="canvas-container">
+              <canvas id="canvas"></canvas>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="stat">
+              <small>Пикселей закрашено</small>
+              <strong id="stat-pixels">0</strong>
+            </div>
+            <div class="stat">
+              <small>Вызовов SetPixel</small>
+              <strong id="stat-calls">0</strong>
+            </div>
+            <div class="stat">
+              <small>Размер растра</small>
+              <strong id="stat-size">0×0</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Панель бенчмарка -->
+  <section class="panel" data-panel="benchmark">
+    <h1>Замеры производительности</h1>
+    <p style="margin-bottom:20px;color:#627087">Сравнение времени работы алгоритмов</p>
+    
+    <div class="paper">
+      <h2>Тестирование</h2>
+      <p>Построение 1000 отрезков и 500 окружностей</p>
+      <button class="btn-primary" id="run-benchmark" style="max-width:300px;margin-top:12px">Запустить тест</button>
+      
+      <div id="benchmark-results" style="margin-top:20px;display:none">
+        <h3>Результаты (мс)</h3>
+        <table style="width:100%;border-collapse:collapse;margin-top:12px">
+          <thead>
+            <tr style="background:#f6f8fb">
+              <th style="padding:10px;text-align:left">Алгоритм</th>
+              <th style="padding:10px;text-align:left">Время (мс)</th>
+              <th style="padding:10px;text-align:left">Пикселей</th>
+            </tr>
+          </thead>
+          <tbody id="benchmark-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Панель теории -->
+  <section class="panel" data-panel="theory">
+    <h1>Теория растровых алгоритмов</h1>
+    <p style="margin-bottom:20px;color:#627087">Основные принципы и формулы</p>
+    
+    <div class="theory-grid">
+      <div class="paper theory-card">
+        <h2>Виртуальный растр</h2>
+        <p>Двумерный массив для хранения пикселей. Алгоритмы работают только с ним, не обращаясь к графике.</p>
+        <div class="formula">
+          col = x − minX<br/>
+          row = y − minY<br/>
+          screenY = (height − 1 − row) × cell
+        </div>
+      </div>
+      
+      <div class="paper theory-card">
+        <h2>Пошаговый алгоритм</h2>
+        <p>Вычисляет y по уравнению прямой y = y₀ + k(x − x₀) на каждом шаге.</p>
+        <div class="formula">
+          k = Δy / Δx<br/>
+          x = x₀ + i<br/>
+          y = round(y₀ + k × i)
+        </div>
+      </div>
+      
+      <div class="paper theory-card">
+        <h2>Алгоритм ЦДА (DDA)</h2>
+        <p>Использует приращения координат. Требует вещественных вычислений.</p>
+        <div class="formula">
+          L = max(|Δx|, |Δy|)<br/>
+          dx = Δx / L<br/>
+          dy = Δy / L<br/>
+          x = x + dx, y = y + dy
+        </div>
+      </div>
+      
+      <div class="paper theory-card">
+        <h2>Алгоритм Брезенхема</h2>
+        <p>Целочисленный алгоритм с переменной ошибки. Работает быстрее за счёт отсутствия вещественных операций.</p>
+        <div class="formula">
+          d = 2×minor − major<br/>
+          if d < 0: d += 2×minor<br/>
+          else: d += 2×(minor−major), y++
+        </div>
+      </div>
+      
+      <div class="paper theory-card">
+        <h2>Окружность Брезенхема</h2>
+        <p>Строит 1/8 окружности и отражает точки симметрично (8 точек).</p>
+        <div class="formula">
+          d = 3 − 2×r<br/>
+          if d < 0: d += 4×x + 6<br/>
+          else: d += 4×(x−y) + 10, y--
+        </div>
+      </div>
+      
+      <div class="paper theory-card">
+        <h2>8 октантов</h2>
+        <p>Алгоритм Брезенхема корректно работает во всех направлениях благодаря выбору ведущей оси и знаков приращений.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Панель проверок -->
+  <section class="panel" data-panel="checks">
+    <h1>Проверка корректности</h1>
+    <p style="margin-bottom:20px;color:#627087">Автоматические тесты алгоритмов</p>
+    
+    <div class="paper">
+      <button class="btn-primary" id="run-checks" style="max-width:250px">Запустить проверки</button>
+      <div id="check-summary" style="margin:16px 0;font-weight:600"></div>
+      <div id="check-results"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+
+// ВИРТУАЛЬНЫЙ РАСТР
+
+/**
+ * Класс виртуального растра - двумерный массив для хранения пикселей
+ * Алгоритмы работают только с этим классом, не обращаясь напрямую к canvas
+ */
+class VirtualGrid {
+  constructor(width, height, minX, minY) {
+    this.width = width;
+    this.height = height;
+    this.minX = minX;
+    this.minY = minY;
+    this.data = new Float32Array(width * height);
+    this.calls = 0;
+    this.pixels = 0;
+  }
+
+  /** Очистка растра */
+  clear() {
+    this.data.fill(0);
+    this.calls = 0;
+    this.pixels = 0;
+  }
+
+  /**
+   * Установка пикселя
+   * @param {number} x - координата X
+   * @param {number} y - координата Y  
+   * @param {number} intensity - интенсивность (0-1)
+   */
+  setPixel(x, y, intensity = 1) {
+    const col = x - this.minX;
+    const row = y - this.minY;
+    this.calls++;
+    
+    if (col >= 0 && col < this.width && row >= 0 && row < this.height) {
+      const idx = row * this.width + col;
+      if (intensity > this.data[idx]) {
+        this.data[idx] = intensity;
+        this.pixels++;
+      }
+    }
+  }
+
+  /** Получение интенсивности пикселя */
+  getPixel(x, y) {
+    const col = x - this.minX;
+    const row = y - this.minY;
+    if (col >= 0 && col < this.width && row >= 0 && row < this.height) {
+      return this.data[row * this.width + col];
+    }
+    return 0;
+  }
+
+  /** Получение всех закрашенных пикселей */
+  getPoints() {
+    const points = [];
+    for (let row = 0; row < this.height; row++) {
+      for (let col = 0; col < this.width; col++) {
+        const idx = row * this.width + col;
+        if (this.data[idx] > 0) {
+          points.push({
+            x: col + this.minX,
+            y: row + this.minY,
+            intensity: this.data[idx]
+          });
+        }
+      }
+    }
+    return points;
+  }
+}
+
+
+// РАСТРОВЫЕ АЛГОРИТМЫ
+
+/**
+ * Пошаговый алгоритм построения отрезка
+ * Вычисляет y через уравнение прямой на каждом шаге
+ */
+function stepLine(grid, x0, y0, x1, y1) {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const steps = Math.max(Math.abs(dx), Math.abs(dy));
+  
+  if (steps === 0) {
+    grid.setPixel(x0, y0, 1);
+    return;
+  }
+  
+  const k = dy / dx;
+  const xStep = dx > 0 ? 1 : -1;
+  
+  for (let i = 0; i <= steps; i++) {
+    const x = x0 + i * xStep;
+    const y = Math.round(y0 + k * i * xStep);
+    grid.setPixel(x, y, 1);
+  }
+}
+
+/**
+ * Алгоритм ЦДА (Digital Differential Analyzer)
+ * Использует приращения координат с плавающей точкой
+ */
+function ddaLine(grid, x0, y0, x1, y1) {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const steps = Math.max(Math.abs(dx), Math.abs(dy));
+  
+  if (steps === 0) {
+    grid.setPixel(x0, y0, 1);
+    return;
+  }
+  
+  const xInc = dx / steps;
+  const yInc = dy / steps;
+  
+  let x = x0;
+  let y = y0;
+  
+  for (let i = 0; i <= steps; i++) {
+    grid.setPixel(Math.round(x), Math.round(y), 1);
+    x += xInc;
+    y += yInc;
+  }
+}
+
+/**
+ * Алгоритм Брезенхема для отрезка
+ * Целочисленный алгоритм с переменной ошибки
+ * Работает во всех 8 октантах
+ */
+function bresenhamLine(grid, x0, y0, x1, y1) {
+  const dx = Math.abs(x1 - x0);
+  const dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  
+  let err = (dx > dy ? dx : -dy) / 2;
+  let x = x0;
+  let y = y0;
+  
+  while (true) {
+    grid.setPixel(x, y, 1);
+    if (x === x1 && y === y1) break;
+    
+    const e2 = err;
+    if (e2 > -dx) {
+      err -= dy;
+      x += sx;
+    }
+    if (e2 < dy) {
+      err += dx;
+      y += sy;
+    }
+  }
+}
+
+/**
+ * Алгоритм Брезенхема для окружности
+ * Строит 1/8 окружности и отражает точки
+ */
+function bresenhamCircle(grid, cx, cy, radius) {
+  let x = 0;
+  let y = radius;
+  let d = 3 - 2 * radius;
+  
+  while (x <= y) {
+    setCirclePoints(grid, cx, cy, x, y);
+    
+    if (d < 0) {
+      d += 4 * x + 6;
+    } else {
+      d += 4 * (x - y) + 10;
+      y--;
+    }
+    x++;
+  }
+}
+
+/**
+ * Установка 8 симметричных точек окружности
+ */
+function setCirclePoints(grid, cx, cy, x, y) {
+  grid.setPixel(cx + x, cy + y);
+  grid.setPixel(cx - x, cy + y);
+  grid.setPixel(cx + x, cy - y);
+  grid.setPixel(cx - x, cy - y);
+  grid.setPixel(cx + y, cy + x);
+  grid.setPixel(cx - y, cy + x);
+  grid.setPixel(cx + y, cy - x);
+  grid.setPixel(cx - y, cy - x);
+}
+
+
+// ОТРИСОВКА НА CANVAS С ПОДПИСЯМИ КООРДИНАТ
+
+/**
+ * Отрисовка виртуального растра на canvas с координатной сеткой и подписями
+ */
+function drawGrid(canvas, grid, cellSize) {
+  const ctx = canvas.getContext('2d');
+  const width = grid.width * cellSize;
+  const height = grid.height * cellSize;
+  
+  canvas.width = width;
+  canvas.height = height;
+  
+  // Фон
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+  
+  // Пиксели (закрашенные ячейки)
+  for (let row = 0; row < grid.height; row++) {
+    for (let col = 0; col < grid.width; col++) {
+      const intensity = grid.data[row * grid.width + col];
+      if (intensity > 0) {
+        ctx.fillStyle = `rgba(40, 99, 189, ${intensity})`;
+        const x = col * cellSize;
+        const y = (grid.height - row - 1) * cellSize;
+        ctx.fillRect(x, y, cellSize, cellSize);
+      }
+    }
+  }
+  
+  // Сетка (тонкие линии)
+  ctx.strokeStyle = '#e8ecf0';
+  ctx.lineWidth = 1;
+  for (let col = 0; col <= grid.width; col++) {
+    ctx.beginPath();
+    ctx.moveTo(col * cellSize + 0.5, 0);
+    ctx.lineTo(col * cellSize + 0.5, height);
+    ctx.stroke();
+  }
+  for (let row = 0; row <= grid.height; row++) {
+    ctx.beginPath();
+    ctx.moveTo(0, row * cellSize + 0.5);
+    ctx.lineTo(width, row * cellSize + 0.5);
+    ctx.stroke();
+  }
+  
+  // Оси координат (более толстые линии)
+  const axisX = -grid.minX * cellSize;
+  const axisY = (grid.height + grid.minY - 1) * cellSize;
+  
+  ctx.strokeStyle = '#71839f';
+  ctx.lineWidth = 2;
+  
+  if (axisX >= 0 && axisX <= width) {
+    ctx.beginPath();
+    ctx.moveTo(axisX + 0.5, 0);
+    ctx.lineTo(axisX + 0.5, height);
+    ctx.stroke();
+  }
+  
+  if (axisY >= 0 && axisY <= height) {
+    ctx.beginPath();
+    ctx.moveTo(0, axisY + 0.5);
+    ctx.lineTo(width, axisY + 0.5);
+    ctx.stroke();
+  }
+  
+  // Подписи координат на осях
+  if (cellSize >= 8) {
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.fillStyle = '#58677c';
+    
+    // Определяем шаг подписей в зависимости от размера клетки
+    let labelStep = 10;
+    if (cellSize < 10) labelStep = 20;
+    if (cellSize < 6) labelStep = 50;
+    
+    // Подписи на оси X (внизу)
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (let x = grid.minX; x < grid.minX + grid.width; x += labelStep) {
+      const screenX = (x - grid.minX) * cellSize;
+      const screenY = Math.min(axisY + 5, height - 15);
+      ctx.fillText(x.toString(), screenX, screenY);
+    }
+    
+    // Подписи на оси Y (слева)
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let y = grid.minY; y < grid.minY + grid.height; y += labelStep) {
+      const screenX = Math.max(axisX - 5, 25);
+      const screenY = (grid.height - (y - grid.minY) - 1) * cellSize + cellSize / 2;
+      ctx.fillText(y.toString(), screenX, screenY);
+    }
+  }
+}
+
+
+// УПРАВЛЕНИЕ ПРИЛОЖЕНИЕМ
+
+let grid = new VirtualGrid(81, 61, -40, -30);
+let cellSize = 10; // Уменьшен размер клетки по умолчанию
+
+/** Переключение вкладок */
+document.querySelectorAll('.nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector(`[data-panel="${btn.dataset.tab}"]`).classList.add('active');
+  });
+});
+
+/** Изменение типа фигуры */
+document.getElementById('algorithm').addEventListener('change', function() {
+  const isLine = this.value === 'step' || this.value === 'dda' || this.value === 'bresenham';
+  document.getElementById('line-params').style.display = isLine ? 'block' : 'none';
+  document.getElementById('circle-params').style.display = isLine ? 'none' : 'block';
+});
+
+/** Обновление информации о масштабе */
+function updateZoomInfo() {
+  document.getElementById('zoom-info').textContent = 
+    `Масштаб: ${cellSize} px | Размер клетки: ${cellSize}×${cellSize}`;
+}
+
+/** Изменение масштаба */
+function changeZoom(delta) {
+  cellSize = Math.max(4, Math.min(30, cellSize + delta));
+  updateZoomInfo();
+  draw();
+}
+
+document.getElementById('zoom-in').addEventListener('click', () => changeZoom(2));
+document.getElementById('zoom-out').addEventListener('click', () => changeZoom(-2));
+document.getElementById('zoom-reset').addEventListener('click', () => {
+  cellSize = 10;
+  updateZoomInfo();
+  draw();
+});
+
+/** Построение фигуры */
+function draw() {
+  const algo = document.getElementById('algorithm').value;
+  grid.clear();
+  
+  if (algo === 'circle') {
+    const cx = parseInt(document.getElementById('cx').value) || 0;
+    const cy = parseInt(document.getElementById('cy').value) || 0;
+    const r = parseInt(document.getElementById('radius').value) || 20;
+    bresenhamCircle(grid, cx, cy, r);
+  } else {
+    const x0 = parseInt(document.getElementById('x0').value) || 0;
+    const y0 = parseInt(document.getElementById('y0').value) || 0;
+    const x1 = parseInt(document.getElementById('x1').value) || 0;
+    const y1 = parseInt(document.getElementById('y1').value) || 0;
+    
+    if (algo === 'step') stepLine(grid, x0, y0, x1, y1);
+    else if (algo === 'dda') ddaLine(grid, x0, y0, x1, y1);
+    else if (algo === 'bresenham') bresenhamLine(grid, x0, y0, x1, y1);
+  }
+  
+  drawGrid(document.getElementById('canvas'), grid, cellSize);
+  updateStats();
+}
+
+/** Обновление статистики */
+function updateStats() {
+  document.getElementById('stat-pixels').textContent = grid.pixels;
+  document.getElementById('stat-calls').textContent = grid.calls;
+  document.getElementById('stat-size').textContent = `${grid.width}×${grid.height}`;
+}
+
+/** Запуск бенчмарка */
+document.getElementById('run-benchmark').addEventListener('click', function() {
+  const results = [];
+  const algorithms = [
+    { name: 'Пошаговый', fn: stepLine },
+    { name: 'ЦДА', fn: ddaLine },
+    { name: 'Брезенхем', fn: bresenhamLine }
+  ];
+  
+  // Тест отрезков
+  const testLines = [];
+  for (let i = 0; i < 1000; i++) {
+    testLines.push({
+      x0: Math.floor(Math.random() * 100) - 50,
+      y0: Math.floor(Math.random() * 100) - 50,
+      x1: Math.floor(Math.random() * 100) - 50,
+      y1: Math.floor(Math.random() * 100) - 50
+    });
+  }
+  
+  algorithms.forEach(algo => {
+    const testGrid = new VirtualGrid(201, 201, -100, -100);
+    const start = performance.now();
+    testLines.forEach(line => {
+      algo.fn(testGrid, line.x0, line.y0, line.x1, line.y1);
+    });
+    const time = performance.now() - start;
+    results.push({ name: algo.name + ' (линии)', time: time.toFixed(2), pixels: testGrid.pixels });
+  });
+  
+  // Тест окружностей
+  const testCircles = [];
+  for (let i = 0; i < 500; i++) {
+    testCircles.push({
+      cx: Math.floor(Math.random() * 100) - 50,
+      cy: Math.floor(Math.random() * 100) - 50,
+      r: Math.floor(Math.random() * 50) + 5
+    });
+  }
+  
+  const circleGrid = new VirtualGrid(201, 201, -100, -100);
+  const start = performance.now();
+  testCircles.forEach(c => bresenhamCircle(circleGrid, c.cx, c.cy, c.r));
+  const time = performance.now() - start;
+  results.push({ name: 'Брезенхем (окружности)', time: time.toFixed(2), pixels: circleGrid.pixels });
+  
+  // Вывод результатов
+  const tbody = document.getElementById('benchmark-table');
+  tbody.innerHTML = '';
+  results.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="padding:8px">${r.name}</td><td style="padding:8px">${r.time}</td><td style="padding:8px">${r.pixels}</td>`;
+    tbody.appendChild(tr);
+  });
+  
+  document.getElementById('benchmark-results').style.display = 'block';
+});
+
+/** Запуск проверок */
+document.getElementById('run-checks').addEventListener('click', function() {
+  const checks = [];
+  
+  // Проверка 1: Горизонтальная линия
+  const g1 = new VirtualGrid(101, 101, -50, -50);
+  bresenhamLine(g1, 0, 0, 20, 0);
+  checks.push({ name: 'Горизонтальная линия', pass: g1.pixels === 21 });
+  
+  // Проверка 2: Вертикальная линия
+  const g2 = new VirtualGrid(101, 101, -50, -50);
+  bresenhamLine(g2, 0, 0, 0, 20);
+  checks.push({ name: 'Вертикальная линия', pass: g2.pixels === 21 });
+  
+  // Проверка 3: Диагональ
+  const g3 = new VirtualGrid(101, 101, -50, -50);
+  bresenhamLine(g3, 0, 0, 20, 20);
+  checks.push({ name: 'Диагональ 45°', pass: g3.pixels === 21 });
+  
+  // Проверка 4: Окружность
+  const g4 = new VirtualGrid(101, 101, -50, -50);
+  bresenhamCircle(g4, 0, 0, 10);
+  checks.push({ name: 'Окружность r=10', pass: g4.pixels > 0 && g4.getPixel(10, 0) === 1 });
+  
+  // Проверка 5: ЦДА vs Брезенхем
+  const g5a = new VirtualGrid(101, 101, -50, -50);
+  const g5b = new VirtualGrid(101, 101, -50, -50);
+  ddaLine(g5a, 0, 0, 30, 15);
+  bresenhamLine(g5b, 0, 0, 30, 15);
+  checks.push({ name: 'ЦДА и Брезенхем', pass: g5a.pixels === g5b.pixels });
+  
+  // Вывод результатов
+  const passed = checks.filter(c => c.pass).length;
+  document.getElementById('check-summary').textContent = 
+    `Пройдено: ${passed} из ${checks.length}`;
+  
+  const container = document.getElementById('check-results');
+  container.innerHTML = '';
+  checks.forEach(c => {
+    const div = document.createElement('div');
+    div.className = `check-item ${c.pass ? 'pass' : 'fail'}`;
+    div.innerHTML = `<span>${c.name}</span><strong>${c.pass ? '✓ ПРОЙДЕНО' : '✗ ОШИБКА'}</strong>`;
+    container.appendChild(div);
+  });
+});
+
+document.getElementById('draw').addEventListener('click', draw);
+
+// Инициализация
+updateZoomInfo();
+draw();
+</script>
+</body>
+</html>
