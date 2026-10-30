@@ -1,5 +1,3 @@
----
----
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -189,6 +187,23 @@ body {
   transform: translateY(0);
 }
 
+.btn-secondary {
+  background: white;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: var(--primary);
+  color: white;
+}
+
 /* Canvas контейнер */
 .canvas-wrapper {
   position: relative;
@@ -325,6 +340,65 @@ canvas {
   color: var(--text);
 }
 
+/* Примеры вычислений */
+.example-section {
+  margin-top: 20px;
+}
+
+.example-controls {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.example-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  font-size: 0.9rem;
+}
+
+.example-table th,
+.example-table td {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.example-table th {
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+}
+
+.example-table tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.example-table tr:hover {
+  background: #eef2ff;
+}
+
+.example-description {
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+  border-left: 4px solid var(--primary);
+}
+
+.example-description h3 {
+  color: var(--primary);
+  margin-bottom: 8px;
+  font-size: 1.1rem;
+}
+
+.example-description p {
+  color: var(--text);
+  line-height: 1.6;
+}
+
 /* Проверки */
 .check-item {
   display: flex;
@@ -378,7 +452,7 @@ tr:hover {
 
 /* Адаптивность */
 @media (max-width: 968px) {
-  .workspace, .theory-grid {
+  .workspace, .theory-grid, .example-controls {
     grid-template-columns: 1fr;
   }
   
@@ -411,6 +485,7 @@ tr:hover {
     <p>Базовые растровые алгоритмы — визуализация и исследование</p>
     <nav class="nav">
       <button class="active" data-tab="raster">Растеризация</button>
+      <button data-tab="examples">Примеры расчётов</button>
       <button data-tab="benchmark">Замеры времени</button>
       <button data-tab="theory">Теория</button>
       <button data-tab="checks">Проверки</button>
@@ -430,6 +505,8 @@ tr:hover {
             <option value="step">Пошаговый алгоритм</option>
             <option value="dda">ЦДА (DDA)</option>
             <option value="bresenham" selected>Брезенхем (отрезок)</option>
+            <option value="wu">Ву (сглаживание)</option>
+            <option value="castle">Кастл-Питвей</option>
             <option value="circle">Брезенхем (окружность)</option>
           </select>
         </div>
@@ -501,6 +578,35 @@ tr:hover {
     </div>
   </section>
 
+  <!-- Панель примеров вычислений -->
+  <section class="panel" data-panel="examples">
+    <div class="paper">
+      <h2>Примеры сопроводительных вычислений</h2>
+      <p style="color: var(--text-muted); margin-bottom: 20px;">Пошаговые вычисления для каждого алгоритма на примере отрезка A(0, 0) → B(7, 3)</p>
+      
+      <div class="example-controls">
+        <div class="field">
+          <label>Начало A (x₀, y₀)</label>
+          <div class="two-col">
+            <input id="ex-x0" type="number" value="0"/>
+            <input id="ex-y0" type="number" value="0"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Конец B (x₁, y₁)</label>
+          <div class="two-col">
+            <input id="ex-x1" type="number" value="7"/>
+            <input id="ex-y1" type="number" value="3"/>
+          </div>
+        </div>
+      </div>
+      
+      <button class="btn-primary" id="show-examples" style="max-width:300px;">Показать вычисления</button>
+      
+      <div id="examples-output" style="margin-top: 24px;"></div>
+    </div>
+  </section>
+
   <!-- Панель бенчмарка -->
   <section class="panel" data-panel="benchmark">
     <div class="paper">
@@ -565,6 +671,27 @@ tr:hover {
           d = 2×minor − major<br/>
           if d < 0: d += 2×minor<br/>
           else: d += 2×(minor−major), y++
+        </div>
+      </div>
+      
+      <div class="paper theory-card">
+        <h2>Алгоритм Ву (сглаживание)</h2>
+        <p>Вычисляет интенсивность пикселей на основе дробной части координаты для сглаживания линии.</p>
+        <div class="formula">
+          f = y − floor(y)<br/>
+          α₁ = 1 − f<br/>
+          α₂ = f<br/>
+          pixel₁ = α₁, pixel₂ = α₂
+        </div>
+      </div>
+      
+      <div class="paper theory-card">
+        <h2>Алгоритм Кастла-Питвея</h2>
+        <p>Использует код Ротштейна (последовательность S и D) для построения отрезка.</p>
+        <div class="formula">
+          S — шаг по главной оси<br/>
+          D — диагональный шаг<br/>
+          Код формируется через алгоритм Евклида
         </div>
       </div>
       
@@ -760,6 +887,149 @@ function bresenhamLine(grid, x0, y0, x1, y1) {
 }
 
 /**
+ * Алгоритм Ву для сглаженных линий
+ * Вычисляет интенсивность пикселей на основе дробной части координаты
+ */
+function wuLine(grid, x0, y0, x1, y1) {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const steep = Math.abs(dy) > Math.abs(dx);
+  
+  if (steep) {
+    [x0, y0] = [y0, x0];
+    [x1, y1] = [y1, x1];
+  }
+  
+  if (x0 > x1) {
+    [x0, x1] = [x1, x0];
+    [y0, y1] = [y1, y0];
+  }
+  
+  const dx2 = x1 - x0;
+  const dy2 = y1 - y0;
+  const gradient = dx2 === 0 ? 1 : dy2 / dx2;
+  
+  // Начальная точка
+  let xEnd = Math.round(x0);
+  let yEnd = y0 + gradient * (xEnd - x0);
+  let xGap = 1 - (x0 + 0.5 - Math.floor(x0 + 0.5));
+  let xPx1 = xEnd;
+  let yPx1 = Math.floor(yEnd);
+  
+  if (steep) {
+    grid.setPixel(yPx1, xPx1, (1 - (yEnd - yPx1)) * xGap);
+    grid.setPixel(yPx1 + 1, xPx1, (yEnd - yPx1) * xGap);
+  } else {
+    grid.setPixel(xPx1, yPx1, (1 - (yEnd - yPx1)) * xGap);
+    grid.setPixel(xPx1, yPx1 + 1, (yEnd - yPx1) * xGap);
+  }
+  
+  let intery = yEnd + gradient;
+  
+  // Конечная точка
+  xEnd = Math.round(x1);
+  yEnd = y1 + gradient * (xEnd - x1);
+  xGap = x1 + 0.5 - Math.floor(x1 + 0.5);
+  let xPx2 = xEnd;
+  let yPx2 = Math.floor(yEnd);
+  
+  if (steep) {
+    grid.setPixel(yPx2, xPx2, (1 - (yEnd - yPx2)) * xGap);
+    grid.setPixel(yPx2 + 1, xPx2, (yEnd - yPx2) * xGap);
+  } else {
+    grid.setPixel(xPx2, yPx2, (1 - (yEnd - yPx2)) * xGap);
+    grid.setPixel(xPx2, yPx2 + 1, (yEnd - yPx2) * xGap);
+  }
+  
+  // Основная часть линии
+  if (steep) {
+    for (let x = xPx1 + 1; x < xPx2; x++) {
+      const y = Math.floor(intery);
+      grid.setPixel(y, x, 1 - (intery - y));
+      grid.setPixel(y + 1, x, intery - y);
+      intery += gradient;
+    }
+  } else {
+    for (let x = xPx1 + 1; x < xPx2; x++) {
+      const y = Math.floor(intery);
+      grid.setPixel(x, y, 1 - (intery - y));
+      grid.setPixel(x, y + 1, intery - y);
+      intery += gradient;
+    }
+  }
+}
+
+/**
+ * Алгоритм Кастла-Питвея для построения отрезка
+ * Использует код Ротштейна (последовательность S и D шагов)
+ */
+function castlePittewayLine(grid, x0, y0, x1, y1) {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const ax = Math.abs(dx);
+  const ay = Math.abs(dy);
+  const sx = dx > 0 ? 1 : -1;
+  const sy = dy > 0 ? 1 : -1;
+  
+  // Определяем главную ось
+  if (ax >= ay) {
+    // Главная ось X
+    let a = ax;
+    let b = ay;
+    let code = '';
+    
+    // Формируем код Ротштейна
+    while (b > 0) {
+      const q = Math.floor(a / b);
+      const r = a % b;
+      code += 'S'.repeat(q);
+      if (r > 0) code += 'D';
+      a = b;
+      b = r;
+    }
+    
+    // Декодируем код
+    let x = x0;
+    let y = y0;
+    grid.setPixel(x, y, 1);
+    
+    for (const char of code) {
+      x += sx;
+      if (char === 'D') {
+        y += sy;
+      }
+      grid.setPixel(x, y, 1);
+    }
+  } else {
+    // Главная ось Y
+    let a = ay;
+    let b = ax;
+    let code = '';
+    
+    while (b > 0) {
+      const q = Math.floor(a / b);
+      const r = a % b;
+      code += 'S'.repeat(q);
+      if (r > 0) code += 'D';
+      a = b;
+      b = r;
+    }
+    
+    let x = x0;
+    let y = y0;
+    grid.setPixel(x, y, 1);
+    
+    for (const char of code) {
+      y += sy;
+      if (char === 'D') {
+        x += sx;
+      }
+      grid.setPixel(x, y, 1);
+    }
+  }
+}
+
+/**
  * Алгоритм Брезенхема для окружности
  * Строит 1/8 окружности и отражает точки
  */
@@ -793,6 +1063,213 @@ function setCirclePoints(grid, cx, cy, x, y) {
   grid.setPixel(cx - y, cy + x);
   grid.setPixel(cx + y, cy - x);
   grid.setPixel(cx - y, cy - x);
+}
+
+// ============================================
+// ПРИМЕРЫ ВЫЧИСЛЕНИЙ
+// ============================================
+
+/**
+ * Генерация пошаговых вычислений для алгоритма Брезенхема
+ */
+function demonstrateBresenham(x0, y0, x1, y1) {
+  const dx = Math.abs(x1 - x0);
+  const dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  
+  let err = (dx > dy ? dx : -dy) / 2;
+  let x = x0;
+  let y = y0;
+  
+  const steps = [];
+  let stepNum = 0;
+  
+  while (true) {
+    steps.push({
+      step: stepNum,
+      x: x,
+      y: y,
+      d: err.toFixed(2),
+      action: ''
+    });
+    
+    if (x === x1 && y === y1) break;
+    
+    const e2 = err;
+    let action = '';
+    
+    if (e2 > -dx) {
+      err -= dy;
+      x += sx;
+      action = `d = ${err.toFixed(2)}, x += ${sx}`;
+    }
+    if (e2 < dy) {
+      err += dx;
+      y += sy;
+      action += `, y += ${sy}`;
+    }
+    
+    stepNum++;
+    steps[steps.length - 1].action = action;
+  }
+  
+  return {
+    initial: { dx, dy, sx, sy, d: ((dx > dy ? dx : -dy) / 2).toFixed(2) },
+    steps
+  };
+}
+
+/**
+ * Генерация пошаговых вычислений для алгоритма ЦДА
+ */
+function demonstrateDDA(x0, y0, x1, y1) {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const steps = Math.max(Math.abs(dx), Math.abs(dy));
+  
+  const xInc = dx / steps;
+  const yInc = dy / steps;
+  
+  let x = x0;
+  let y = y0;
+  
+  const result = [];
+  
+  for (let i = 0; i <= steps; i++) {
+    result.push({
+      step: i,
+      x: x.toFixed(2),
+      y: y.toFixed(2),
+      roundedX: Math.round(x),
+      roundedY: Math.round(y)
+    });
+    x += xInc;
+    y += yInc;
+  }
+  
+  return {
+    initial: { dx, dy, steps, xInc: xInc.toFixed(4), yInc: yInc.toFixed(4) },
+    steps: result
+  };
+}
+
+/**
+ * Генерация пошаговых вычислений для пошагового алгоритма
+ */
+function demonstrateStep(x0, y0, x1, y1) {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const steps = Math.max(Math.abs(dx), Math.abs(dy));
+  
+  const k = dy / dx;
+  const xStep = dx > 0 ? 1 : -1;
+  
+  const result = [];
+  
+  for (let i = 0; i <= steps; i++) {
+    const x = x0 + i * xStep;
+    const exactY = y0 + k * i * xStep;
+    const y = Math.round(exactY);
+    
+    result.push({
+      step: i,
+      x: x,
+      exactY: exactY.toFixed(3),
+      roundedY: y
+    });
+  }
+  
+  return {
+    initial: { dx, dy, steps, k: k.toFixed(4) },
+    steps: result
+  };
+}
+
+/**
+ * Генерация пошаговых вычислений для алгоритма Ву
+ */
+function demonstrateWu(x0, y0, x1, y1) {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const steep = Math.abs(dy) > Math.abs(dx);
+  
+  let sx = x0, sy = y0, ex = x1, ey = y1;
+  
+  if (steep) {
+    [sx, sy] = [sy, sx];
+    [ex, ey] = [ey, ex];
+  }
+  
+  if (sx > ex) {
+    [sx, ex] = [ex, sx];
+    [sy, ey] = [ey, sy];
+  }
+  
+  const dx2 = ex - sx;
+  const dy2 = ey - sy;
+  const gradient = dx2 === 0 ? 1 : dy2 / dx2;
+  
+  const result = [];
+  let intery = sy + gradient;
+  
+  for (let x = sx + 1; x < ex; x++) {
+    const y = Math.floor(intery);
+    const frac = intery - y;
+    
+    result.push({
+      x: steep ? y : x,
+      y1: steep ? x : y,
+      y2: steep ? x : y + 1,
+      alpha1: (1 - frac).toFixed(3),
+      alpha2: frac.toFixed(3)
+    });
+    
+    intery += gradient;
+  }
+  
+  return {
+    initial: { steep, gradient: gradient.toFixed(4) },
+    steps: result
+  };
+}
+
+/**
+ * Генерация пошаговых вычислений для алгоритма Кастла-Питвея
+ */
+function demonstrateCastlePitteway(x0, y0, x1, y1) {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const ax = Math.abs(dx);
+  const ay = Math.abs(dy);
+  const sx = dx > 0 ? 1 : -1;
+  const sy = dy > 0 ? 1 : -1;
+  
+  let a, b, code = '';
+  
+  if (ax >= ay) {
+    a = ax;
+    b = ay;
+  } else {
+    a = ay;
+    b = ax;
+  }
+  
+  // Формируем код
+  let tempA = a, tempB = b;
+  while (tempB > 0) {
+    const q = Math.floor(tempA / tempB);
+    const r = tempA % tempB;
+    code += 'S'.repeat(q);
+    if (r > 0) code += 'D';
+    tempA = tempB;
+    tempB = r;
+  }
+  
+  return {
+    initial: { ax, ay, sx, sy, code },
+    codeLength: code.length
+  };
 }
 
 // ============================================
@@ -913,7 +1390,7 @@ document.querySelectorAll('.nav button').forEach(btn => {
 
 /** Изменение типа фигуры */
 document.getElementById('algorithm').addEventListener('change', function() {
-  const isLine = this.value === 'step' || this.value === 'dda' || this.value === 'bresenham';
+  const isLine = ['step', 'dda', 'bresenham', 'wu', 'castle'].includes(this.value);
   document.getElementById('line-params').style.display = isLine ? 'block' : 'none';
   document.getElementById('circle-params').style.display = isLine ? 'none' : 'block';
 });
@@ -957,6 +1434,8 @@ function draw() {
     if (algo === 'step') stepLine(grid, x0, y0, x1, y1);
     else if (algo === 'dda') ddaLine(grid, x0, y0, x1, y1);
     else if (algo === 'bresenham') bresenhamLine(grid, x0, y0, x1, y1);
+    else if (algo === 'wu') wuLine(grid, x0, y0, x1, y1);
+    else if (algo === 'castle') castlePittewayLine(grid, x0, y0, x1, y1);
   }
   
   drawGrid(document.getElementById('canvas'), grid, cellSize);
@@ -970,13 +1449,100 @@ function updateStats() {
   document.getElementById('stat-size').textContent = `${grid.width}×${grid.height}`;
 }
 
+/** Показать примеры вычислений */
+document.getElementById('show-examples').addEventListener('click', function() {
+  const x0 = parseInt(document.getElementById('ex-x0').value) || 0;
+  const y0 = parseInt(document.getElementById('ex-y0').value) || 0;
+  const x1 = parseInt(document.getElementById('ex-x1').value) || 0;
+  const y1 = parseInt(document.getElementById('ex-y1').value) || 0;
+  
+  const output = document.getElementById('examples-output');
+  output.innerHTML = '';
+  
+  // Пошаговый алгоритм
+  const stepData = demonstrateStep(x0, y0, x1, y1);
+  output.innerHTML += createExampleHTML('Пошаговый алгоритм', stepData.initial, stepData.steps, ['step', 'x', 'exactY', 'roundedY']);
+  
+  // ЦДА
+  const ddaData = demonstrateDDA(x0, y0, x1, y1);
+  output.innerHTML += createExampleHTML('Алгоритм ЦДА (DDA)', ddaData.initial, ddaData.steps, ['step', 'x', 'y', 'roundedX', 'roundedY']);
+  
+  // Брезенхем
+  const bresData = demonstrateBresenham(x0, y0, x1, y1);
+  output.innerHTML += createExampleHTML('Алгоритм Брезенхема', bresData.initial, bresData.steps, ['step', 'x', 'y', 'd', 'action']);
+  
+  // Ву
+  const wuData = demonstrateWu(x0, y0, x1, y1);
+  output.innerHTML += createExampleHTML('Алгоритм Ву (сглаживание)', wuData.initial, wuData.steps, ['x', 'y1', 'y2', 'alpha1', 'alpha2']);
+  
+  // Кастл-Питвей
+  const castleData = demonstrateCastlePitteway(x0, y0, x1, y1);
+  output.innerHTML += createCastleExampleHTML(castleData);
+});
+
+/**
+ * Создание HTML для примера вычислений
+ */
+function createExampleHTML(title, initial, steps, columns) {
+  let html = `<div class="example-section">`;
+  html += `<div class="example-description"><h3>${title}</h3>`;
+  
+  // Начальные параметры
+  html += `<p><strong>Начальные параметры:</strong> `;
+  for (const [key, value] of Object.entries(initial)) {
+    html += `${key} = ${value}, `;
+  }
+  html = html.slice(0, -2) + '</p></div>';
+  
+  // Таблица
+  html += `<table class="example-table"><thead><tr>`;
+  columns.forEach(col => {
+    const labels = {
+      step: 'Шаг', x: 'X', y: 'Y', exactY: 'Точное Y', roundedY: 'Округлённое Y',
+      roundedX: 'Округлённое X', d: 'Ошибка d', action: 'Действие',
+      y1: 'Y₁', y2: 'Y₂', alpha1: 'α₁', alpha2: 'α₂'
+    };
+    html += `<th>${labels[col] || col}</th>`;
+  });
+  html += `</tr></thead><tbody>`;
+  
+  steps.forEach(step => {
+    html += '<tr>';
+    columns.forEach(col => {
+      html += `<td>${step[col] !== undefined ? step[col] : '-'}</td>`;
+    });
+    html += '</tr>';
+  });
+  
+  html += `</tbody></table></div>`;
+  return html;
+}
+
+/**
+ * Создание HTML для примера Кастла-Питвея
+ */
+function createCastleExampleHTML(data) {
+  let html = `<div class="example-section">`;
+  html += `<div class="example-description"><h3>Алгоритм Кастла-Питвея</h3>`;
+  html += `<p><strong>Начальные параметры:</strong> `;
+  html += `Δx = ${data.initial.ax}, Δy = ${data.initial.ay}, `;
+  html += `signX = ${data.initial.sx}, signY = ${data.initial.sy}</p>`;
+  html += `<p><strong>Код Ротштейна:</strong> ${data.initial.code}</p>`;
+  html += `<p><strong>Длина кода:</strong> ${data.codeLength} символов</p>`;
+  html += `<p><strong>Расшифровка:</strong> S — шаг по главной оси, D — диагональный шаг</p>`;
+  html += `</div></div>`;
+  return html;
+}
+
 /** Запуск бенчмарка */
 document.getElementById('run-benchmark').addEventListener('click', function() {
   const results = [];
   const algorithms = [
     { name: 'Пошаговый', fn: stepLine },
     { name: 'ЦДА', fn: ddaLine },
-    { name: 'Брезенхем', fn: bresenhamLine }
+    { name: 'Брезенхем', fn: bresenhamLine },
+    { name: 'Ву', fn: wuLine },
+    { name: 'Кастл-Питвей', fn: castlePittewayLine }
   ];
   
   // Тест отрезков
@@ -1035,17 +1601,17 @@ document.getElementById('run-checks').addEventListener('click', function() {
   // Проверка 1: Горизонтальная линия
   const g1 = new VirtualGrid(101, 101, -50, -50);
   bresenhamLine(g1, 0, 0, 20, 0);
-  checks.push({ name: 'Горизонтальная линия', pass: g1.pixels === 21 });
+  checks.push({ name: 'Горизонтальная линия (Брезенхем)', pass: g1.pixels === 21 });
   
   // Проверка 2: Вертикальная линия
   const g2 = new VirtualGrid(101, 101, -50, -50);
   bresenhamLine(g2, 0, 0, 0, 20);
-  checks.push({ name: 'Вертикальная линия', pass: g2.pixels === 21 });
+  checks.push({ name: 'Вертикальная линия (Брезенхем)', pass: g2.pixels === 21 });
   
   // Проверка 3: Диагональ
   const g3 = new VirtualGrid(101, 101, -50, -50);
   bresenhamLine(g3, 0, 0, 20, 20);
-  checks.push({ name: 'Диагональ 45°', pass: g3.pixels === 21 });
+  checks.push({ name: 'Диагональ 45° (Брезенхем)', pass: g3.pixels === 21 });
   
   // Проверка 4: Окружность
   const g4 = new VirtualGrid(101, 101, -50, -50);
@@ -1057,7 +1623,17 @@ document.getElementById('run-checks').addEventListener('click', function() {
   const g5b = new VirtualGrid(101, 101, -50, -50);
   ddaLine(g5a, 0, 0, 30, 15);
   bresenhamLine(g5b, 0, 0, 30, 15);
-  checks.push({ name: 'ЦДА и Брезенхем', pass: g5a.pixels === g5b.pixels });
+  checks.push({ name: 'ЦДА и Брезенхем дают одинаковый результат', pass: g5a.pixels === g5b.pixels });
+  
+  // Проверка 6: Алгоритм Ву
+  const g6 = new VirtualGrid(101, 101, -50, -50);
+  wuLine(g6, 0, 0, 20, 10);
+  checks.push({ name: 'Алгоритм Ву (сглаживание)', pass: g6.pixels > 0 });
+  
+  // Проверка 7: Кастл-Питвей
+  const g7 = new VirtualGrid(101, 101, -50, -50);
+  castlePittewayLine(g7, 0, 0, 20, 10);
+  checks.push({ name: 'Алгоритм Кастла-Питвея', pass: g7.pixels > 0 });
   
   // Вывод результатов
   const passed = checks.filter(c => c.pass).length;
