@@ -1,0 +1,1368 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ММКГ · Лабораторная № 6</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#17283b;background:#eef2f6;font-size:14px;--line:#dce4eb;--muted:#53677c;--accent:#12666f}
+*{box-sizing:border-box}body{margin:0}
+header{padding:23px 30px;display:flex;justify-content:space-between;align-items:center;gap:20px;background:#fff;border-bottom:1px solid var(--line)}
+h1,h2,h3,p{margin:0}h1{font-size:27px;letter-spacing:-.7px;margin:5px 0}header p{color:var(--muted)}
+.eyebrow{font-size:10px;font-weight:750;letter-spacing:1.3px;color:var(--accent)}
+.header-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.header-actions a,.engine,.tag{border:1px solid var(--line);background:#f2f6f9;border-radius:6px;padding:6px 9px;color:#37516b;font-size:11px;font-weight:650;text-decoration:none;white-space:nowrap}
+.engine{background:#e6f4f1;color:#12666f;border-color:#cbe4dd}
+main{display:grid;grid-template-columns:320px minmax(0,1fr);gap:16px;padding:16px 20px;max-width:1900px;margin:auto}
+.controls,.workspace{min-width:0;display:flex;flex-direction:column;gap:12px}
+.controls section,.diagnostics section,.noncomm,.view{background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 2px 5px #23364b08}
+.controls section{padding:13px 14px}
+.controls h2{font-size:14px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.controls h2 span{font-size:10px;color:var(--accent);background:#e7f1f2;padding:4px 6px;border-radius:4px}
+label{font-size:12px;color:#42576b;font-weight:600;display:block;margin:8px 0 4px}
+input,select,button{font:inherit}
+input[type=number],select{width:100%;min-width:0;padding:7px 8px;border:1px solid #c9d5df;background:#fff;color:#17283b;border-radius:5px;outline:none}
+input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid #26a0a9;outline-offset:1px}
+input[type=number]:invalid{border-color:#c24141}
+input[type=range]{accent-color:var(--accent);width:100%;min-width:0}
+input[type=checkbox]{accent-color:var(--accent)}
+button{background:#f6f8fa;border:1px solid #cad6df;color:#233e54;font-weight:650;font-size:12px;border-radius:6px;padding:8px 10px;cursor:pointer;white-space:normal}
+button:hover{background:#e7eff3}
+button.primary{background:var(--accent);color:white;border-color:var(--accent);white-space:nowrap}
+button.primary:hover{background:#0b525a}
+.inline{display:flex;gap:7px;align-items:center}
+.inline>*{min-width:0}.inline button{flex-shrink:0}.inline input[type=number]{flex:1}
+.params{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;margin-top:11px;font-size:11px}
+.params div{display:flex;justify-content:space-between;gap:4px;border-bottom:1px solid #eef2f5;padding-bottom:3px}
+.params span{color:var(--muted)}
+.params strong,.mono,td,.metrics strong{font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.triplet{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.triplet label{margin:0;font-weight:500;color:#627588;font-size:10px}
+.triplet input{margin-top:3px}
+.field-title{margin:8px 0 4px;font-weight:650;font-size:12px;color:#42576b}
+.hint{color:var(--muted);font-size:11px;line-height:1.55;margin:6px 0}
+.check{display:flex;align-items:center;gap:6px;margin:5px 0;font-weight:500}
+.views{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.view{overflow:hidden;min-width:0}
+.view-title{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 13px;border-bottom:1px solid var(--line)}
+.view-title h2{font-size:14px}
+.view-title div>span{font-size:11px;color:var(--muted)}
+canvas{display:block;width:100%;height:clamp(240px,30vw,390px);background:#edf2f7}
+.perspective canvas{cursor:grab;touch-action:none}
+.perspective canvas:active{cursor:grabbing}
+.view-footer{min-height:28px;padding:6px 10px;font-size:10px;color:var(--muted);border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:5px;flex-wrap:wrap}
+.diagnostics{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.diagnostics section{padding:13px;min-width:0}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.section-head h2,.noncomm h2{font-size:14px}
+.status{font-size:11px;padding:4px 7px;border-radius:5px;background:#e0f2e9;color:#176349;font-weight:700}
+.status.fail{background:#fee2e2;color:#991b1b}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0}
+.metrics div{background:#f3f6f9;border:1px solid #e7edf2;border-radius:6px;padding:8px 5px;min-width:0}
+.metrics span{display:block;color:var(--muted);font-size:10px}
+.metrics strong{font-size:20px;display:block;margin-top:5px}
+.diagnostics h3{font-size:12px;margin:10px 0 5px}
+.checksum{display:grid;grid-template-columns:1fr;gap:4px;font-size:11px}
+.checksum span{color:var(--muted)}
+.checksum strong{overflow-wrap:anywhere}
+.diagnostics table{width:100%;border-collapse:separate;border-spacing:3px;table-layout:fixed;margin:8px 0}
+.diagnostics td{text-align:right;background:#eef3f7;border-radius:3px;padding:7px 3px;font-size:clamp(9px,1vw,12px);overflow-wrap:anywhere}
+.noncomm{padding:13px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.noncomm .mono{font-size:12px;color:#12666f}
+#error{padding:10px;background:#fee2e2;border:1px solid #fecaca;border-radius:6px;color:#991b1b;position:sticky;bottom:10px;z-index:5}
+footer{padding:5px 20px 20px;color:var(--muted);font-size:11px;max-width:1900px;margin:auto}
+@media(max-width:1050px){main{grid-template-columns:280px minmax(0,1fr);padding:12px}.diagnostics{grid-template-columns:1fr}.views{gap:8px}canvas{height:255px}.metrics strong{font-size:18px}}
+@media(max-width:740px){header{padding:15px;align-items:flex-start;flex-direction:column}main{grid-template-columns:1fr}.workspace{grid-row:1}.controls{display:grid;grid-template-columns:1fr 1fr}.views{grid-template-columns:1fr 1fr}canvas{height:230px}.view-title{padding:8px}.view-title div>span{font-size:10px}.diagnostics{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.views,.controls,.diagnostics{grid-template-columns:1fr}canvas{height:285px}.view-title div>span{font-size:11px}.metrics strong{font-size:19px}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="eyebrow">ПРОГРАММИРОВАНИЕ КОМПЬЮТЕРНОЙ ГРАФИКИ</div>
+    <h1>Процедурная 3D-геометрия</h1>
+    <p>Лабораторная № 6 / Винтовой зубчатый фланец</p>
+  </div>
+  <div class="header-actions">
+    <span class="engine">CPU · Software renderer</span>
+  </div>
+</header>
+<main>
+  <aside class="controls">
+    <section>
+      <h2><span>01</span> Генерация детали</h2>
+      <form id="generate-form">
+        <label for="seed">Seed (целое число)</label>
+        <div class="inline">
+          <input id="seed" type="number" step="1" value="42" required />
+          <button class="primary" type="submit">Сгенерировать</button>
+        </div>
+        <label for="detail">Детализация по высоте</label>
+        <select id="detail">
+          <option value="1">1 слой · базовая сетка</option>
+          <option value="4">4 слоя</option>
+          <option value="12">12 слоёв</option>
+          <option value="32">32 слоя</option>
+          <option value="64">64 слоя · максимум</option>
+        </select>
+      </form>
+      <div id="params" class="params"></div>
+    </section>
+    <section>
+      <h2><span>02</span> Преобразования</h2>
+      <div id="transforms"></div>
+      <label for="order">Порядок применения</label>
+      <select id="order">
+        <option value="ST">S → Rx → Ry → Rz → T → A</option>
+        <option value="TS">T → S → Rx → Ry → Rz → A</option>
+      </select>
+      <p class="hint">A — поворот вокруг произвольной оси в мировых координатах.</p>
+      <div class="inline">
+        <button id="reset">Сброс преобразований</button>
+        <button id="mirror" title="Изменить знак Sx">Отразить X</button>
+      </div>
+    </section>
+    <section>
+      <h2><span>03</span> Произвольная ось</h2>
+      <div id="axis-fields"></div>
+      <label for="axis-angle">Угол θ, °</label>
+      <div class="inline">
+        <input id="axis-angle" type="number" value="0" step="1" min="-360000" max="360000" />
+        <input id="axis-slider" type="range" min="-180" max="180" value="0" aria-label="Угол произвольного поворота" />
+      </div>
+      <div id="axis-vector" class="hint mono"></div>
+      <button id="animate">Вращать ось</button>
+    </section>
+    <section>
+      <h2><span>04</span> Камера и свет</h2>
+      <div id="light-fields"></div>
+      <label for="fov">Угол обзора FOV, °</label>
+      <div class="inline">
+        <input id="fov" type="range" min="25" max="90" value="45" />
+        <output id="fov-value">45°</output>
+      </div>
+      <button id="fit">Центрировать камеру</button>
+      <div id="camera-info" class="hint mono"></div>
+    </section>
+    <section>
+      <h2><span>05</span> Визуализация</h2>
+      <label class="check"><input id="cull" type="checkbox" checked /> Back-Face Culling</label>
+      <label class="check"><input id="depth" type="checkbox" checked /> Z-буфер</label>
+      <label class="check"><input id="light-on" type="checkbox" checked /> Освещение Ламберта</label>
+      <label class="check"><input id="wire" type="checkbox" /> Рёбра треугольников</label>
+      <label class="check"><input id="axis-show" type="checkbox" checked /> Ось P1P2</label>
+      <label class="check"><input id="light-show" type="checkbox" checked /> Маркер источника света</label>
+    </section>
+    <div id="error" role="alert" hidden></div>
+  </aside>
+  <div class="workspace">
+    <div class="views">
+      <article class="view perspective">
+        <div class="view-title">
+          <div><h2>Перспектива</h2><span>Свободная орбитальная камера</span></div>
+          <span class="tag">P · V · M</span>
+        </div>
+        <canvas id="perspective" aria-label="Перспективная проекция"></canvas>
+        <div class="view-footer">
+          ЛКМ — облет камеры · Колесо — приближение
+          <span id="render-stats"></span>
+        </div>
+      </article>
+      <article class="view">
+        <div class="view-title">
+          <div><h2>Вид спереди</h2><span>Oxy · наблюдение со стороны −Z</span></div>
+          <span class="tag">XY</span>
+        </div>
+        <canvas id="xy" aria-label="Ортографическая проекция Oxy"></canvas>
+        <div class="view-footer" id="xy-scale"></div>
+      </article>
+      <article class="view">
+        <div class="view-title">
+          <div><h2>Вид сверху</h2><span>Oxz · наблюдение со стороны −Y</span></div>
+          <span class="tag">XZ</span>
+        </div>
+        <canvas id="xz" aria-label="Ортографическая проекция Oxz"></canvas>
+        <div class="view-footer" id="xz-scale"></div>
+      </article>
+      <article class="view">
+        <div class="view-title">
+          <div><h2>Вид сбоку</h2><span>Oyz · наблюдение со стороны +X</span></div>
+          <span class="tag">YZ</span>
+        </div>
+        <canvas id="yz" aria-label="Ортографическая проекция Oyz"></canvas>
+        <div class="view-footer" id="yz-scale"></div>
+      </article>
+    </div>
+    <div class="diagnostics">
+      <section>
+        <div class="section-head">
+          <h2>Топология сетки</h2>
+          <span id="topology-status" class="status"></span>
+        </div>
+        <div class="metrics">
+          <div><span>Вершины V</span><strong id="v-count">—</strong></div>
+          <div><span>Рёбра E</span><strong id="e-count">—</strong></div>
+          <div><span>Грани F</span><strong id="f-count">—</strong></div>
+          <div><span>V − E + F</span><strong id="euler">—</strong></div>
+        </div>
+        <p class="hint" id="topology-details"></p>
+        <h3>Контрольная сумма в мировых координатах</h3>
+        <div class="checksum">
+          <span>Центр масс (среднее вершин)</span>
+          <strong id="center" class="mono"></strong>
+          <span>Площадь поверхности</span>
+          <strong id="area" class="mono"></strong>
+        </div>
+      </section>
+      <section>
+        <div class="section-head">
+          <h2>Матрица моделирования M</h2>
+          <span class="tag" id="det"></span>
+        </div>
+        <p id="matrix-order" class="hint mono"></p>
+        <table id="matrix" aria-label="Результирующая матрица моделирования"></table>
+        <p class="hint">Векторы-столбцы · матрица 4 × 4 · преобразования справа налево.</p>
+      </section>
+    </div>
+    <section class="noncomm">
+      <div>
+        <h2>Проверка некоммутативности</h2>
+        <p class="hint">Контрольный пример: v = (1, 2, 3, 1), T = (10, 0, 0), S = (2, 1, 1).</p>
+        <div id="noncomm-result" class="mono"></div>
+      </div>
+      <button id="demo">Показать на детали</button>
+    </section>
+  </div>
+</main>
+<footer>
+  Canvas 2D используется только для вывода рассчитанных пикселей и вспомогательных линий. Математика, триангуляция, отсечение, Z-буфер и освещение реализованы вручную.
+</footer>
+
+<script>
+'use strict';
+// ===== МОДУЛЬ CORE: математика и геометрия =====
+const Core = (() => {
+  const EPS = 1e-9;
+  const rad = d => d * Math.PI / 180;
+
+  // Векторные операции
+  const add = (a, b) => [a[0]+b[0], a[1]+b[1], a[2]+b[2]];
+  const sub = (a, b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+  const scale = (a, s) => [a[0]*s, a[1]*s, a[2]*s];
+  const dot = (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+  const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  const length = a => Math.sqrt(dot(a, a));
+  const unit = a => { const n = length(a); return n > EPS ? scale(a, 1/n) : [0,0,0]; };
+
+  // Матричные операции
+  const I = () => [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+
+  function mul(a, b) {
+    const c = new Array(16).fill(0);
+    for (let i = 0; i < 4; i++)
+      for (let j = 0; j < 4; j++)
+        for (let k = 0; k < 4; k++)
+          c[i*4+j] += a[i*4+k] * b[k*4+j];
+    return c;
+  }
+
+  function mv(a, v) {
+    return [0,1,2,3].map(i => a[i*4]*v[0] + a[i*4+1]*v[1] + a[i*4+2]*v[2] + a[i*4+3]*v[3]);
+  }
+
+  const T = ([x,y,z]) => [1,0,0,x, 0,1,0,y, 0,0,1,z, 0,0,0,1];
+  const S = ([x,y,z]) => [x,0,0,0, 0,y,0,0, 0,0,z,0, 0,0,0,1];
+
+  function rodrigues(u, a) {
+    const [x,y,z] = unit(u);
+    const c = Math.cos(rad(a)), s = Math.sin(rad(a)), t = 1-c;
+    return [
+      c+x*x*t, x*y*t-z*s, x*z*t+y*s, 0,
+      y*x*t+z*s, c+y*y*t, y*z*t-x*s, 0,
+      z*x*t-y*s, z*y*t+x*s, c+z*z*t, 0,
+      0, 0, 0, 1
+    ];
+  }
+
+  function axisRotation(p, q, a) {
+    const u = sub(q, p);
+    if (length(u) <= EPS) throw Error('P1 и P2 должны различаться');
+    return mul(T(p), mul(rodrigues(u, a), T(scale(p, -1))));
+  }
+
+  function modelMatrix({translation, scaling, rotation, p1, p2, angle, order}) {
+    const r = mul(rodrigues([0,0,1], rotation[2]),
+                  mul(rodrigues([0,1,0], rotation[1]),
+                      rodrigues([1,0,0], rotation[0])));
+    const base = order === 'TS'
+      ? mul(r, mul(S(scaling), T(translation)))
+      : mul(T(translation), mul(r, S(scaling)));
+    return mul(axisRotation(p1, p2, angle), base);
+  }
+
+  const det3 = m => m[0]*(m[5]*m[10]-m[6]*m[9]) - m[1]*(m[4]*m[10]-m[6]*m[8]) + m[2]*(m[4]*m[9]-m[5]*m[8]);
+
+  function lookAt(eye, target, up) {
+    const f = unit(sub(target, eye));
+    const r = unit(cross(f, up));
+    const u = cross(r, f);
+    return [
+      ...r, -dot(r, eye),
+      ...u, -dot(u, eye),
+      ...scale(f, -1), dot(f, eye),
+      0, 0, 0, 1
+    ];
+  }
+
+  function perspective(fov, aspect, near, far) {
+    const f = 1 / Math.tan(rad(fov) / 2);
+    return [
+      f/aspect, 0, 0, 0,
+      0, f, 0, 0,
+      0, 0, (far+near)/(near-far), 2*far*near/(near-far),
+      0, 0, -1, 0
+    ];
+  }
+
+  // Генератор псевдослучайных чисел
+  function random(seed) {
+    let a = 2166136261;
+    for (const c of String(seed)) {
+      a = Math.imul(a ^ c.charCodeAt(0), 16777619);
+    }
+    return () => {
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function parameters(seed) {
+    const r = random(seed);
+    const range = (a, b) => a + (b - a) * r();
+    const N = Math.floor(range(5, 9));
+    const M = Math.floor(range(3, 7));
+    const Rout = 100;
+    const Rin = range(55, 75);
+    const rhole = Rin * range(0.30, 0.48);
+    const offset = Rin * range(0.08, 0.17);
+    const a = range(0, 2 * Math.PI);
+    return {
+      N, M, Rout, Rin, rhole,
+      dx: offset * Math.cos(a),
+      dy: offset * Math.sin(a),
+      H: range(40, 80),
+      twist: range(15, 45),
+      taper: range(0.75, 0.95),
+      holePhase: range(0, 2 * Math.PI)
+    };
+  }
+
+  // Геометрические функции
+  const orient = (a, b, c) => (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0]);
+  const polygonArea = p => p.reduce((s, a, i) => {
+    const b = p[(i+1) % p.length];
+    return s + a[0]*b[1] - a[1]*b[0];
+  }, 0) / 2;
+
+  function inside(p, poly) {
+    let hit = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const a = poly[i], b = poly[j];
+      if ((a[1] > p[1]) !== (b[1] > p[1]) &&
+          p[0] < (b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1]) + a[0])
+        hit = !hit;
+    }
+    return hit;
+  }
+
+  function onSegment(a, b, p) {
+    return Math.abs(orient(a, b, p)) < EPS &&
+           p[0] >= Math.min(a[0], b[0]) - EPS &&
+           p[0] <= Math.max(a[0], b[0]) + EPS &&
+           p[1] >= Math.min(a[1], b[1]) - EPS &&
+           p[1] <= Math.max(a[1], b[1]) + EPS;
+  }
+
+  function intersect(a, b, c, d) {
+    const p = orient(a, b, c), q = orient(a, b, d);
+    const r = orient(c, d, a), s = orient(c, d, b);
+    return ((p > EPS && q < -EPS || p < -EPS && q > EPS) &&
+            (r > EPS && s < -EPS || r < -EPS && s > EPS)) ||
+           onSegment(a, b, c) || onSegment(a, b, d) ||
+           onSegment(c, d, a) || onSegment(c, d, b);
+  }
+
+  const edgeKey = (a, b) => a < b ? `${a},${b}` : `${b},${a}`;
+
+  // Триангуляция кольца (внешний контур + отверстие)
+  function triangulateAnnulus(outer, hole) {
+    const p = outer.concat(hole);
+    const n = outer.length;
+    const k = p.length;
+    const edges = [];
+    const keys = new Set();
+
+    const insert = (a, b) => {
+      edges.push([a, b]);
+      keys.add(edgeKey(a, b));
+    };
+
+    // Добавляем рёбра внешнего контура и отверстия
+    for (const [start, end] of [[0, n], [n, k]]) {
+      for (let i = start; i < end; i++) {
+        insert(i, i + 1 === end ? start : i + 1);
+      }
+    }
+
+    const inSolid = a => inside(a, outer) && !inside(a, hole);
+    const candidates = [];
+
+    // Находим все возможные диагонали
+    for (let a = 0; a < k; a++) {
+      for (let b = a + 1; b < k; b++) {
+        if (!keys.has(edgeKey(a, b))) {
+          candidates.push([a, b, (p[a][0]-p[b][0])**2 + (p[a][1]-p[b][1])**2]);
+        }
+      }
+    }
+
+    // Сортируем по длине
+    candidates.sort((a, b) => a[2] - b[2]);
+
+    // Добавляем допустимые диагонали
+    for (const [a, b] of candidates) {
+      const mid = [(p[a][0]+p[b][0])/2, (p[a][1]+p[b][1])/2];
+      if (!inSolid(mid)) continue;
+      if (p.some((v, i) => i !== a && i !== b && onSegment(p[a], p[b], v))) continue;
+      if (edges.some(([c, d]) => a !== c && a !== d && b !== c && b !== d &&
+          intersect(p[a], p[b], p[c], p[d]))) continue;
+      insert(a, b);
+    }
+
+    // Строим список смежности
+    const adj = Array.from({length: k}, () => []);
+    for (const [a, b] of edges) {
+      adj[a].push(b);
+      adj[b].push(a);
+    }
+
+    // Сортируем соседей по полярному углу
+    for (let a = 0; a < k; a++) {
+      adj[a].sort((b, c) =>
+        Math.atan2(p[b][1]-p[a][1], p[b][0]-p[a][0]) -
+        Math.atan2(p[c][1]-p[a][1], p[c][0]-p[a][0])
+      );
+    }
+
+    // Обход граней
+    const seen = new Set();
+    const tris = [];
+
+    for (const [x, y] of edges) {
+      for (const [start, end] of [[x, y], [y, x]]) {
+        if (seen.has(`${start},${end}`)) continue;
+        let a = start, b = end;
+        const face = [];
+        do {
+          seen.add(`${a},${b}`);
+          face.push(a);
+          const list = adj[b];
+          const c = list[(list.indexOf(a) + list.length - 1) % list.length];
+          a = b;
+          b = c;
+          if (face.length > 2 * edges.length) throw Error('Face traversal failed');
+        } while (a !== start || b !== end);
+
+        if (polygonArea(face.map(i => p[i])) <= EPS) continue;
+        if (face.length === hole.length && face.every(i => i >= n)) continue;
+        if (face.length !== 3) throw Error('Non-triangular face in cap');
+
+        const [i, j, l] = face;
+        const center = [
+          (p[i][0]+p[j][0]+p[l][0])/3,
+          (p[i][1]+p[j][1]+p[l][1])/3
+        ];
+        if (inSolid(center)) tris.push(face);
+        else throw Error('Invalid cap face');
+      }
+    }
+
+    const expected = polygonArea(outer) - polygonArea(hole);
+    const actual = tris.reduce((s, t) => s + polygonArea(t.map(i => p[i])), 0);
+    if (tris.length !== k || Math.abs(expected - actual) > 1e-6) {
+      throw Error('Cap area/count mismatch');
+    }
+
+    return tris;
+  }
+
+  // Генерация геометрии
+  function generate(seed, layers = 1) {
+    if (!Number.isSafeInteger(seed) || !Number.isInteger(layers) ||
+        layers < 1 || layers > 64) {
+      throw Error('Invalid seed or detail');
+    }
+
+    const p = parameters(seed);
+    const n = 2 * p.N;
+    const m = p.M;
+    const k = n + m;
+
+    const outer = Array.from({length: n}, (_, i) => {
+      const a = 2 * Math.PI * i / n;
+      const r = i % 2 ? p.Rin : p.Rout;
+      return [r * Math.cos(a), r * Math.sin(a)];
+    });
+
+    const hole = Array.from({length: m}, (_, i) => {
+      const a = 2 * Math.PI * i / m + p.holePhase;
+      return [p.dx + p.rhole * Math.cos(a), p.dy + p.rhole * Math.sin(a)];
+    });
+
+    const cap = triangulateAnnulus(outer, hole);
+    const vertices = [];
+    const triangles = [];
+    const groups = [];
+
+    const push = (a, b, c, g) => {
+      triangles.push([a, b, c]);
+      groups.push(g);
+    };
+
+    // Создаём вершины для каждого слоя
+    for (let j = 0; j <= layers; j++) {
+      const t = j / layers;
+      const a = rad(p.twist) * t;
+      const s = 1 + (p.taper - 1) * t;
+      const c = Math.cos(a), d = Math.sin(a);
+      for (const [x, y] of outer.concat(hole)) {
+        vertices.push([s*(x*c - y*d), s*(x*d + y*c), p.H*t, 1]);
+      }
+    }
+
+    // Крышки
+    for (const [a, b, c] of cap) {
+      push(a, c, b, 'front');
+      push(a + layers*k, b + layers*k, c + layers*k, 'back');
+    }
+
+    // Боковые стенки
+    for (let l = 0; l < layers; l++) {
+      for (const [start, end, inner] of [[0, n, false], [n, k, true]]) {
+        for (let i = start; i < end; i++) {
+          const j = i + 1 === end ? start : i + 1;
+          const a = l*k + i;
+          const b = l*k + j;
+          const c = (l+1)*k + i;
+          const d = (l+1)*k + j;
+          if (inner) {
+            push(a, c, b, 'hole');
+            push(b, c, d, 'hole');
+          } else {
+            push(a, b, c, 'outer');
+            push(b, d, c, 'outer');
+          }
+        }
+      }
+    }
+
+    // Подсчёт рёбер
+    const map = new Map();
+    for (const t of triangles) {
+      for (let i = 0; i < 3; i++) {
+        const a = t[i], b = t[(i+1) % 3];
+        const key = edgeKey(a, b);
+        if (!map.has(key)) map.set(key, {pair: [Math.min(a,b), Math.max(a,b)], count: 0, balance: 0});
+        const e = map.get(key);
+        e.count++;
+        e.balance += a < b ? 1 : -1;
+      }
+    }
+
+    const edges = Array.from(map.values(), e => e.pair);
+    const V = vertices.length;
+    const E = edges.length;
+    const F = triangles.length;
+    const closed = [...map.values()].every(e => e.count === 2 && e.balance === 0);
+
+    // Проверка связности
+    const adjacency = Array.from({length: V}, () => []);
+    for (const [a, b] of edges) {
+      adjacency[a].push(b);
+      adjacency[b].push(a);
+    }
+    const reached = new Set([0]);
+    const stack = [0];
+    while (stack.length) {
+      for (const j of adjacency[stack.pop()]) {
+        if (!reached.has(j)) {
+          reached.add(j);
+          stack.push(j);
+        }
+      }
+    }
+
+    const unique = new Set(vertices.map(v => v.join(','))).size === V;
+    const nondegenerate = triangles.every(([a, b, c]) =>
+      length(cross(sub(vertices[b], vertices[a]), sub(vertices[c], vertices[a]))) > EPS
+    );
+
+    const euler = V - E + F;
+    const connected = reached.size === V;
+
+    return {
+      seed, layers, p, vertices, triangles, edges, groups, outer, hole, cap,
+      topology: {
+        V, E, F, euler, closed, connected, unique, nondegenerate,
+        valid: euler === 0 && closed && connected && unique && nondegenerate
+      }
+    };
+  }
+
+  // Применение матрицы преобразования
+  function transformed(mesh, matrix) {
+    const vertices = mesh.vertices.map(v => mv(matrix, v));
+    const center = [0, 0, 0];
+    for (const v of vertices) {
+      for (let i = 0; i < 3; i++) center[i] += v[i] / vertices.length;
+    }
+    const sign = det3(matrix) < 0 ? -1 : 1;
+    let area = 0;
+    const faces = mesh.triangles.map(([a, b, c], i) => {
+      const n = cross(sub(vertices[b], vertices[a]), sub(vertices[c], vertices[a]));
+      const len = length(n);
+      area += len / 2;
+      return {
+        indices: sign < 0 ? [a, c, b] : [a, b, c],
+        normal: len > EPS ? scale(n, sign / len) : [0, 0, 0],
+        center: scale(add(add(vertices[a], vertices[b]), vertices[c]), 1/3),
+        group: mesh.groups[i],
+        degenerate: len <= EPS
+      };
+    });
+    return {vertices, faces, center, area, sign};
+  }
+
+  // Отсечение по плоскостям frustum
+  const planes = [
+    v => v[3] + v[0],  // x >= -w
+    v => v[3] - v[0],  // x <= w
+    v => v[3] + v[1],  // y >= -w
+    v => v[3] - v[1],  // y <= w
+    v => v[3] + v[2],  // z >= -w
+    v => v[3] - v[2]   // z <= w
+  ];
+
+  const lerp4 = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+
+  function clipPolygon(poly) {
+    for (const distance of planes) {
+      if (!poly.length) break;
+      const out = [];
+      let a = poly[poly.length - 1];
+      let da = distance(a);
+      for (const b of poly) {
+        const db = distance(b);
+        if ((da >= 0) !== (db >= 0)) {
+          out.push(lerp4(a, b, da / (da - db)));
+        }
+        if (db >= 0) out.push(b);
+        a = b;
+        da = db;
+      }
+      poly = out;
+    }
+    return poly;
+  }
+
+  function clipLine(a, b) {
+    for (const distance of planes) {
+      const da = distance(a), db = distance(b);
+      if (da < 0 && db < 0) return null;
+      if ((da >= 0) !== (db >= 0)) {
+        const p = lerp4(a, b, da / (da - db));
+        if (da < 0) a = p; else b = p;
+      }
+    }
+    return [a, b];
+  }
+
+  function screen(v, w, h) {
+    if (v[3] <= EPS) return null;
+    const x = v[0] / v[3], y = v[1] / v[3], z = v[2] / v[3];
+    return [(x + 1) * w / 2, (1 - y) * h / 2, (z + 1) / 2];
+  }
+
+  // Растеризация треугольника
+  function rasterTriangle(a, b, c, width, height, depth, pixels, color, useDepth = true) {
+    let area = orient(a, b, c);
+    if (Math.abs(area) < EPS) return 0;
+    if (area < 0) { [b, c] = [c, b]; area = -area; }
+
+    const minX = Math.max(0, Math.ceil(Math.min(a[0], b[0], c[0]) - 0.5));
+    const maxX = Math.min(width - 1, Math.floor(Math.max(a[0], b[0], c[0]) - 0.5));
+    const minY = Math.max(0, Math.ceil(Math.min(a[1], b[1], c[1]) - 0.5));
+    const maxY = Math.min(height - 1, Math.floor(Math.max(a[1], b[1], c[1]) - 0.5));
+
+    if (minX > maxX || minY > maxY) return 0;
+
+    const dx0 = b[1] - c[1], dx1 = c[1] - a[1], dx2 = a[1] - b[1];
+    const dy0 = c[0] - b[0], dy1 = a[0] - c[0], dy2 = b[0] - a[0];
+
+    let e0 = orient(b, c, [minX + 0.5, minY + 0.5]);
+    let e1 = orient(c, a, [minX + 0.5, minY + 0.5]);
+    let e2 = orient(a, b, [minX + 0.5, minY + 0.5]);
+    let count = 0;
+
+    for (let y = minY; y <= maxY; y++) {
+      let u = e0, v = e1, w = e2;
+      let idx = y * width + minX;
+      for (let x = minX; x <= maxX; x++, idx++) {
+        if (u >= -EPS && v >= -EPS && w >= -EPS) {
+          const z = (u * a[2] + v * b[2] + w * c[2]) / area;
+          if (z >= -EPS && z <= 1 + EPS && (!useDepth || z < depth[idx])) {
+            depth[idx] = z;
+            pixels[idx] = color;
+            count++;
+          }
+        }
+        u += dx0; v += dx1; w += dx2;
+      }
+      e0 += dy0; e1 += dy1; e2 += dy2;
+    }
+    return count;
+  }
+
+  function rasterLine(a, b, width, height, depth, pixels, color) {
+    const steps = Math.ceil(Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1])));
+    for (let i = 0; i <= steps; i++) {
+      const t = steps ? i / steps : 0;
+      const x = Math.floor(a[0] + (b[0] - a[0]) * t);
+      const y = Math.floor(a[1] + (b[1] - a[1]) * t);
+      const z = a[2] + (b[2] - a[2]) * t;
+      if (x >= 0 && x < width && y >= 0 && y < height) {
+        const k = y * width + x;
+        if (z <= depth[k] + 0.0006) pixels[k] = color;
+      }
+    }
+  }
+
+  function lambert(normal, point, light) {
+    return Math.max(0, Math.min(1, dot(normal, unit(sub(light, point)))));
+  }
+
+  function bounds(vertices) {
+    const lo = [Infinity, Infinity, Infinity];
+    const hi = [-Infinity, -Infinity, -Infinity];
+    for (const v of vertices) {
+      for (let i = 0; i < 3; i++) {
+        lo[i] = Math.min(lo[i], v[i]);
+        hi[i] = Math.max(hi[i], v[i]);
+      }
+    }
+    const center = scale(add(lo, hi), 0.5);
+    return {lo, hi, center, radius: Math.max(1, length(sub(hi, lo)) / 2)};
+  }
+
+  return {
+    EPS, rad, add, sub, scale, dot, cross, length, unit,
+    I, mul, mv, T, S, rodrigues, axisRotation, modelMatrix, det3,
+    lookAt, perspective, parameters, generate, triangulateAnnulus,
+    transformed, inside, intersect, polygonArea, orient,
+    clipPolygon, clipLine, screen, rasterTriangle, rasterLine,
+    lambert, bounds
+  };
+})();
+if (typeof module !== 'undefined') module.exports = Core;
+</script>
+
+<script>
+'use strict';
+// ===== МОДУЛЬ APP: интерфейс и рендеринг =====
+(() => {
+  const C = Core;
+  const $ = id => document.getElementById(id);
+  const fmt = (v, d = 3) => Math.abs(v) < 0.5 * 10**(-d) ? (0).toFixed(d) : v.toFixed(d);
+
+  const defaults = {
+    t: [0, 0, 0],
+    s: [1, 1, 1],
+    r: [0, 0, 0],
+    p1: [-55, -35, -20],
+    p2: [35, 55, 110],
+    light: [200, -250, -220]
+  };
+
+  // Создание полей ввода
+  const field = (parent, id, title, values, step, min, max) => {
+    const block = document.createElement('div');
+    block.innerHTML = `<div class="field-title">${title}</div><div class="triplet">${
+      values.map((v, i) => `<label for="${id}${i}">${'XYZ'[i]}<input id="${id}${i}" type="number" value="${v}" step="${step}" min="${min}" max="${max}" required></label>`).join('')
+    }</div>`;
+    $(parent).append(block);
+  };
+
+  field('transforms', 't', 'Перенос Δ', defaults.t, 'any', -100000, 100000);
+  field('transforms', 's', 'Масштаб S (±)', defaults.s, 'any', -100, 100);
+  field('transforms', 'r', 'Поворот вокруг осей, °', defaults.r, 'any', -360000, 360000);
+  field('axis-fields', 'p1', 'Точка P1', defaults.p1, 'any', -100000, 100000);
+  field('axis-fields', 'p2', 'Точка P2', defaults.p2, 'any', -100000, 100000);
+  field('light-fields', 'light', 'Положение источника света', defaults.light, 'any', -100000, 100000);
+
+  const read = id => [0, 1, 2].map(i => number($(id + i)));
+  const write = (id, v) => v.forEach((x, i) => $(id + i).value = x);
+
+  function number(el) {
+    if (el.value.trim() === '' || !el.validity.valid || !Number.isFinite(Number(el.value))) {
+      throw Error(`Некорректное значение: ${el.labels?.[0]?.textContent.trim() || el.id}`);
+    }
+    return Number(el.value);
+  }
+
+  let mesh = C.generate(42);
+  let world, matrix;
+  let frame = 0;
+  let dirty = true;
+  let animated = false;
+  let lastTime = 0;
+  let az = C.rad(-55);
+  let el = C.rad(-48);
+  let distance = 400;
+  let target = [0, 0, 0];
+  let sceneRadius = 140;
+  let drag = null;
+
+  const canvases = ['perspective', 'xy', 'xz', 'yz'].map(id => {
+    const canvas = $(id);
+    const buffer = document.createElement('canvas');
+    return {
+      id, canvas,
+      ctx: canvas.getContext('2d'),
+      buffer,
+      bctx: buffer.getContext('2d'),
+      depth: null,
+      image: null,
+      pixels: null
+    };
+  });
+
+  const littleEndian = new Uint8Array(new Uint32Array([0x01020304]).buffer)[0] === 4;
+  const rgba = (r, g, b, a = 255) => littleEndian
+    ? ((a << 24) | (b << 16) | (g << 8) | r) >>> 0
+    : ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
+
+  const error = message => {
+    $('error').hidden = !message;
+    $('error').textContent = message || '';
+  };
+
+  function schedule(recompute = false) {
+    dirty = dirty || recompute;
+    if (!frame) frame = requestAnimationFrame(draw);
+  }
+
+  function updateWorld() {
+    const scaling = read('s');
+    if (scaling.some(x => Math.abs(x) < 0.0001)) {
+      throw Error('Масштаб не должен быть нулевым: |S| ≥ 0,0001.');
+    }
+    const p1 = read('p1'), p2 = read('p2');
+    const angle = number($('axis-angle'));
+    const light = read('light');
+
+    const state = {
+      translation: read('t'),
+      scaling,
+      rotation: read('r'),
+      p1, p2, angle,
+      order: $('order').value
+    };
+
+    matrix = C.modelMatrix(state);
+    world = C.transformed(mesh, matrix);
+    world.p1 = p1;
+    world.p2 = p2;
+    world.light = light;
+    world.bounds = C.bounds(world.vertices);
+
+    const t = mesh.topology;
+    for (const [id, v] of [['v-count', t.V], ['e-count', t.E], ['f-count', t.F], ['euler', t.euler]]) {
+      $(id).textContent = v;
+    }
+
+    $('topology-status').textContent = t.valid ? 'Корректна · g = 1' : 'Ошибка топологии';
+    $('topology-status').classList.toggle('fail', !t.valid);
+    $('topology-details').textContent = `${
+      t.closed ? 'Замкнутая, CCW согласован' : 'Незамкнутая или нарушен CCW'
+    } · ${t.connected ? 'связная' : 'несвязная'} · ${
+      t.unique ? 'без дубликатов' : 'есть дубликаты'
+    } · ${t.nondegenerate ? 'без вырожденных граней' : 'есть вырожденные грани'}`;
+
+    $('center').textContent = `(${world.center.map(v => fmt(v, 4)).join('; ')})`;
+    $('area').textContent = `${fmt(world.area, 4)} ед.²`;
+
+    $('matrix').innerHTML = Array.from({length: 4}, (_, i) =>
+      `<tr>${matrix.slice(i*4, i*4+4).map(x => `<td>${fmt(x, 4)}</td>`).join('')}</tr>`
+    ).join('');
+
+    $('det').textContent = `det = ${fmt(C.det3(matrix), 4)}${world.sign < 0 ? ' · отражение' : ''}`;
+    $('matrix-order').textContent = state.order === 'TS'
+      ? 'M = A · Rz · Ry · Rx · S · T'
+      : 'M = A · T · Rz · Ry · Rx · S';
+
+    $('axis-vector').textContent = `u = (${C.unit(C.sub(p2, p1)).map(v => fmt(v)).join('; ')})`;
+  }
+
+  function fit() {
+    if (!world) return;
+    target = world.bounds.center.slice();
+    sceneRadius = Math.max(1, ...world.vertices.map(v => C.length(C.sub(v, target))));
+    const canvas = $('perspective');
+    const aspect = Math.max(0.1, canvas.clientWidth / canvas.clientHeight);
+    const half = C.rad(Number($('fov').value)) / 2;
+    distance = sceneRadius * 1.06 / Math.sin(Math.min(half, Math.atan(Math.tan(half) * aspect)));
+  }
+
+  function params() {
+    const p = mesh.p;
+    const rows = [
+      ['N · зубья', p.N],
+      ['M · отверстие', p.M],
+      ['Rout', p.Rout],
+      ['Rin', fmt(p.Rin, 2)],
+      ['rhole', fmt(p.rhole, 2)],
+      ['Δx', fmt(p.dx, 2)],
+      ['Δy', fmt(p.dy, 2)],
+      ['H', fmt(p.H, 2)],
+      ['αtwist', fmt(p.twist, 2) + '°'],
+      ['ktaper', fmt(p.taper, 3)]
+    ];
+    $('params').innerHTML = rows.map(([k, v]) =>
+      `<div><span>${k}</span><strong>${v}</strong></div>`
+    ).join('');
+  }
+
+  function regenerate() {
+    try {
+      const seed = number($('seed'));
+      if (!Number.isSafeInteger(seed)) {
+        throw Error('Seed должен быть безопасным целым числом (±9007199254740991).');
+      }
+      const next = C.generate(seed, Number($('detail').value));
+      const previous = mesh;
+      mesh = next;
+      try {
+        updateWorld();
+      } catch (e) {
+        mesh = previous;
+        throw e;
+      }
+      params();
+      fit();
+      error('');
+      schedule();
+    } catch (e) {
+      error(e.message);
+    }
+  }
+
+  function resize(v) {
+    const r = v.canvas.getBoundingClientRect();
+    const quality = Math.min(window.devicePixelRatio || 1, 1.5, 850 / Math.max(1, r.width), 620 / Math.max(1, r.height));
+    const w = Math.max(1, Math.round(r.width * quality));
+    const h = Math.max(1, Math.round(r.height * quality));
+    if (v.canvas.width !== w || v.canvas.height !== h || !v.image) {
+      v.canvas.width = v.buffer.width = w;
+      v.canvas.height = v.buffer.height = h;
+      v.image = v.bctx.createImageData(w, h);
+      v.pixels = new Uint32Array(v.image.data.buffer);
+      v.depth = new Float64Array(w * h);
+    }
+    return [w, h];
+  }
+
+  const colors = ['#b64945', '#237552', '#365bb8'];
+
+  function line(ctx, a, b, color, width = 1, dash = []) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.setLineDash(dash);
+    ctx.beginPath();
+    ctx.moveTo(a[0], a[1]);
+    ctx.lineTo(b[0], b[1]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function text(ctx, s, x, y, color = '#516779') {
+    ctx.font = '11px system-ui';
+    ctx.fillStyle = color;
+    ctx.fillText(s, x, y);
+  }
+
+  function tickStep(v) {
+    const n = 10 ** Math.floor(Math.log10(v));
+    return ([1, 2, 5, 10].find(x => x * n >= v) || 10) * n;
+  }
+
+  function ortho(v, w, h) {
+    const config = {xy: [0, 1, 2, 1], xz: [0, 2, 1, 1], yz: [1, 2, 0, -1]}[v.id];
+    const [a, b, d, sgn] = config;
+    const {lo, hi, center} = world.bounds;
+    const s = Math.min(w * 0.76 / Math.max(1, hi[a] - lo[a]), h * 0.76 / Math.max(1, hi[b] - lo[b]));
+    const range = Math.max(1, hi[d] - lo[d]) / 2 + 1;
+    const mat = new Array(16).fill(0);
+    mat[a] = 2 * s / w;
+    mat[3] = -center[a] * 2 * s / w;
+    mat[4 + b] = 2 * s / h;
+    mat[7] = -center[b] * 2 * s / h;
+    mat[8 + d] = sgn / range;
+    mat[11] = -sgn * center[d] / range;
+    mat[15] = 1;
+    const direction = [0, 0, 0];
+    direction[d] = -sgn;
+    return {mat, direction, a, b, s, center};
+  }
+
+  function drawGrid(v, w, h, o) {
+    const {ctx} = v;
+    const {a, b, s, center} = o;
+    const step = tickStep(45 / s);
+    const x0 = w / 2 - center[a] * s;
+    const y0 = h / 2 + center[b] * s;
+
+    for (let t = Math.ceil((-x0 / s) / step) * step; t <= (w - x0) / s; t += step) {
+      const x = x0 + t * s;
+      line(ctx, [x, 0], [x, h], '#dbe4ed');
+      if (Math.abs(t) > step * 0.001) text(ctx, Number(t.toPrecision(5)), x + 3, h - 6);
+    }
+
+    for (let t = Math.ceil(((y0 - h) / s) / step) * step; t <= y0 / s; t += step) {
+      const y = y0 - t * s;
+      line(ctx, [0, y], [w, y], '#dbe4ed');
+      if (Math.abs(t) > step * 0.001) text(ctx, Number(t.toPrecision(5)), 4, y - 3);
+    }
+
+    if (y0 >= 0 && y0 <= h) line(ctx, [0, y0], [w, y0], colors[a], 1.3);
+    if (x0 >= 0 && x0 <= w) line(ctx, [x0, 0], [x0, h], colors[b], 1.3);
+
+    text(ctx, '+' + 'XYZ'[a], w - 25, Math.max(14, Math.min(h - 17, y0 - 5)), colors[a]);
+    text(ctx, '+' + 'XYZ'[b], Math.max(3, Math.min(w - 24, x0 + 4)), 15, colors[b]);
+
+    const sx = 12, sy = 25;
+    line(ctx, [sx, sy], [sx + step * s, sy], '#42576b', 2);
+    line(ctx, [sx, sy - 3], [sx, sy + 3], '#42576b');
+    line(ctx, [sx + step * s, sy - 3], [sx + step * s, sy + 3], '#42576b');
+    text(ctx, `${Number(step.toPrecision(5))} ед.`, sx, sy - 6);
+    $(v.id + '-scale').textContent = `Сетка: ${Number(step.toPrecision(5))} ед. · ${fmt(s * v.canvas.clientWidth / w, 2)} px/ед. (CSS)`;
+  }
+
+  function projectedLine(mat, a, b, w, h) {
+    const c = C.clipLine(C.mv(mat, [...a, 1]), C.mv(mat, [...b, 1]));
+    return c ? c.map(p => C.screen(p, w, h)) : null;
+  }
+
+  function marker(ctx, mat, p, w, h, name, color) {
+    const c = C.mv(mat, [...p, 1]);
+    if (c[3] <= 0 || c.slice(0, 3).some(x => Math.abs(x) > c[3])) return;
+    const a = C.screen(c, w, h);
+    ctx.beginPath();
+    ctx.arc(a[0], a[1], 4, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.stroke();
+    text(ctx, name, a[0] + 7, a[1] - 6, color);
+  }
+
+  function overlays(v, w, h, mat) {
+    const ctx = v.ctx;
+    if ($('axis-show').checked) {
+      const u = C.unit(C.sub(world.p2, world.p1));
+      const ext = Math.max(world.bounds.radius * 1.65, C.length(C.sub(world.p2, world.p1)));
+      const a = C.sub(world.p1, C.scale(u, ext));
+      const b = C.add(world.p2, C.scale(u, ext));
+      const p = projectedLine(mat, a, b, w, h);
+      if (p && p.every(Boolean)) {
+        line(ctx, ...p, '#fff', 3, [7, 6]);
+        line(ctx, ...p, '#9b4a12', 1.6, [7, 6]);
+      }
+      marker(ctx, mat, world.p1, w, h, 'P1', '#9b4a12');
+      marker(ctx, mat, world.p2, w, h, 'P2', '#9b4a12');
+    }
+    if ($('light-show').checked) {
+      marker(ctx, mat, world.light, w, h, 'L', '#aa7000');
+    }
+  }
+
+  function render(v) {
+    const [w, h] = resize(v);
+    const ctx = v.ctx;
+    ctx.fillStyle = '#edf2f7';
+    ctx.fillRect(0, 0, w, h);
+
+    let mat, eye, direction;
+
+    if (v.id === 'perspective') {
+      eye = C.add(target, [
+        distance * Math.cos(el) * Math.cos(az),
+        distance * Math.cos(el) * Math.sin(az),
+        distance * Math.sin(el)
+      ]);
+      const near = Math.max(0.01, sceneRadius * 0.005);
+      const far = Math.max(near + 1, distance + C.length(C.sub(world.bounds.center, target)) + world.bounds.radius * 3 + 100);
+      mat = C.mul(C.perspective(Number($('fov').value), w / h, near, far), C.lookAt(eye, target, [0, 0, 1]));
+      $('camera-info').textContent = `Eye (${eye.map(x => fmt(x, 1)).join('; ')}) · Target (${target.map(x => fmt(x, 1)).join('; ')}) · Near ${fmt(near, 2)} · Far ${fmt(far, 1)}`;
+
+      const origin = [0, 0, 0];
+      for (let i = 0; i < 3; i++) {
+        const p = [0, 0, 0];
+        p[i] = sceneRadius * 0.85;
+        const seg = projectedLine(mat, origin, p, w, h);
+        if (seg && seg.every(Boolean)) {
+          line(ctx, ...seg, colors[i], 1.2);
+          text(ctx, 'XYZ'[i], seg[1][0] + 3, seg[1][1] - 3, colors[i]);
+        }
+      }
+    } else {
+      const o = ortho(v, w, h);
+      mat = o.mat;
+      direction = o.direction;
+      drawGrid(v, w, h, o);
+    }
+
+    v.depth.fill(Infinity);
+    v.pixels.fill(0);
+
+    const clips = world.vertices.map(p => C.mv(mat, p));
+    const cull = $('cull').checked;
+    const useDepth = $('depth').checked;
+    const lighting = $('light-on').checked;
+    const wire = $('wire').checked;
+
+    let drawn = 0, culled = 0;
+    const visible = [];
+
+    for (const face of world.faces) {
+      if (face.degenerate) continue;
+      const view = eye ? C.sub(eye, face.center) : direction;
+      if (cull && C.dot(face.normal, view) <= 0) {
+        culled++;
+        continue;
+      }
+
+      const poly = C.clipPolygon(face.indices.map(i => clips[i]));
+      if (poly.length < 3) continue;
+      const pts = poly.map(p => C.screen(p, w, h));
+      if (pts.some(p => !p)) continue;
+
+      const intensity = lighting ? C.lambert(face.normal, face.center, world.light) : 1;
+      const base = [96, 182, 202];
+      const color = rgba(...base.map(x => Math.round(x * intensity)));
+
+      for (let i = 1; i < pts.length - 1; i++) {
+        C.rasterTriangle(pts[0], pts[i], pts[i+1], w, h, v.depth, v.pixels, color, useDepth);
+      }
+      drawn++;
+
+      if (wire) visible.push(face.indices);
+    }
+
+    if (wire) {
+      for (const t of visible) {
+        for (let i = 0; i < 3; i++) {
+          const clipped = C.clipLine(clips[t[i]], clips[t[(i+1) % 3]]);
+          if (!clipped) continue;
+          const p = clipped.map(a => C.screen(a, w, h));
+          if (p.every(Boolean)) {
+            C.rasterLine(...p, w, h, v.depth, v.pixels, rgba(35, 75, 86));
+          }
+        }
+      }
+    }
+
+    v.bctx.putImageData(v.image, 0, 0);
+    ctx.drawImage(v.buffer, 0, 0);
+    overlays(v, w, h, mat);
+
+    return {drawn, culled};
+  }
+
+  function draw(now) {
+    frame = 0;
+    if (animated) {
+      const dt = lastTime ? Math.min(60, now - lastTime) : 0;
+      lastTime = now;
+      const val = (Number($('axis-angle').value) + dt * 0.045 + 180) % 360 - 180;
+      $('axis-angle').value = val.toFixed(2);
+      $('axis-slider').value = val;
+      dirty = true;
+    }
+
+    try {
+      if (dirty) {
+        updateWorld();
+        dirty = false;
+        error('');
+      }
+      const start = performance.now();
+      let stats;
+      for (const v of canvases) {
+        const result = render(v);
+        if (v.id === 'perspective') stats = result;
+      }
+      $('render-stats').textContent = `${stats.drawn} граней · ${stats.culled} отсечено · ${(performance.now() - start).toFixed(1)} мс / 4 окна`;
+    } catch (e) {
+      error(e.message);
+      dirty = false;
+      if (animated) stopAnimation();
+    }
+
+    if (animated) schedule();
+  }
+
+  function stopAnimation() {
+    animated = false;
+    lastTime = 0;
+    $('animate').textContent = 'Вращать ось';
+  }
+
+  function reset() {
+    stopAnimation();
+    for (const id of ['t', 's', 'r']) write(id, defaults[id]);
+    write('p1', defaults.p1);
+    write('p2', defaults.p2);
+    $('axis-angle').value = $('axis-slider').value = 0;
+    $('order').value = 'ST';
+    schedule(true);
+  }
+
+  $('generate-form').addEventListener('submit', e => {
+    e.preventDefault();
+    regenerate();
+  });
+
+  $('detail').addEventListener('change', regenerate);
+
+  for (const id of ['transforms', 'axis-fields', 'light-fields']) {
+    $(id).addEventListener('input', () => schedule(true));
+  }
+
+  $('order').addEventListener('change', () => schedule(true));
+
+  $('axis-angle').addEventListener('input', () => {
+    stopAnimation();
+    $('axis-slider').value = $('axis-angle').value;
+    schedule(true);
+  });
+
+  $('axis-slider').addEventListener('input', () => {
+    stopAnimation();
+    $('axis-angle').value = $('axis-slider').value;
+    schedule(true);
+  });
+
+  $('axis-angle').step = 'any';
+
+  $('animate').addEventListener('click', () => {
+    if (animated) stopAnimation();
+    else {
+      animated = true;
+      lastTime = 0;
+      $('animate').textContent = 'Остановить';
+      schedule(true);
+    }
+  });
+
+  $('reset').addEventListener('click', reset);
+
+  $('mirror').addEventListener('click', () => {
+    try {
+      $('s0').value = -number($('s0'));
+      schedule(true);
+    } catch (e) {
+      error(e.message);
+    }
+  });
+
+  $('fit').addEventListener('click', () => {
+    try {
+      if (dirty) {
+        updateWorld();
+        dirty = false;
+      }
+      fit();
+      error('');
+      schedule();
+    } catch (e) {
+      error(e.message);
+    }
+  });
+
+  $('fov').addEventListener('input', () => {
+    $('fov-value').textContent = $('fov').value + '°';
+    schedule();
+  });
+
+  for (const id of ['cull', 'depth', 'light-on', 'wire', 'axis-show', 'light-show']) {
+    $(id).addEventListener('change', () => schedule());
+  }
+
+  const pc = $('perspective');
+  pc.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    drag = [e.clientX, e.clientY, e.pointerId];
+    pc.setPointerCapture(e.pointerId);
+  });
+
+  pc.addEventListener('pointermove', e => {
+    if (!drag || drag[2] !== e.pointerId) return;
+    az -= (e.clientX - drag[0]) * 0.008;
+    el = Math.max(-Math.PI/2 + 0.015, Math.min(Math.PI/2 - 0.015, el + (e.clientY - drag[1]) * 0.008));
+    drag = [e.clientX, e.clientY, e.pointerId];
+    schedule();
+  });
+
+  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+    pc.addEventListener(type, () => { drag = null; });
+  }
+
+  pc.addEventListener('wheel', e => {
+    e.preventDefault();
+    distance = Math.max(sceneRadius * 0.12, Math.min(sceneRadius * 100, distance * Math.exp(Math.max(-500, Math.min(500, e.deltaY)) * 0.0015)));
+    schedule();
+  }, {passive: false});
+
+  const v = [1, 2, 3, 1];
+  const t = C.T([10, 0, 0]);
+  const s = C.S([2, 1, 1]);
+  $('noncomm-result').textContent = `T·S·v = (${C.mv(C.mul(t, s), v).join(', ')}) ≠ S·T·v = (${C.mv(C.mul(s, t), v).join(', ')})`;
+
+  $('demo').addEventListener('click', () => {
+    stopAnimation();
+    write('t', [10, 0, 0]);
+    write('s', [2, 1, 1]);
+    write('r', [0, 0, 0]);
+    $('axis-angle').value = $('axis-slider').value = 0;
+    $('order').value = 'ST';
+    try {
+      updateWorld();
+      fit();
+      schedule();
+    } catch (e) {
+      error(e.message);
+    }
+  });
+
+  new ResizeObserver(() => schedule()).observe(document.querySelector('.views'));
+
+  params();
+  updateWorld();
+  fit();
+  schedule();
+})();
+</script>
+</body>
+</html>
