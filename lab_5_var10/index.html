@@ -1,0 +1,1963 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>ClipLab — отсечение отрезков · ЛР №5 · Вариант 10</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070b18; --surface:#0d1428; --surface2:#121b36; --surface3:#182348;
+  --line:rgba(148,163,255,.14); --line2:rgba(148,163,255,.26);
+  --ink:#e9edff; --muted:#8b93b8; --muted2:#5c6488;
+  --blue:#6366f1; --blue2:#3b82f6; --cyan:#22d3ee; --amber:#ffb020;
+  --lime:#a3e635; --magenta:#e879f9; --violet:#a78bfa;
+  --red:#fb4d6d; --green:#34d399; --info:#38bdf8;
+  --grad-primary:linear-gradient(135deg,#6366f1,#3b82f6);
+  --grad-hot:linear-gradient(135deg,#e879f9,#6366f1);
+  --r:14px; --r-sm:9px;
+  --shadow:0 18px 50px rgba(3,6,20,.55);
+  --font-d:'Unbounded',system-ui,sans-serif;
+  --font-b:'Manrope',system-ui,sans-serif;
+  --font-m:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  --header-h:64px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-b); background:var(--bg); color:var(--ink);
+  min-height:100vh; overflow-x:hidden; font-size:15px; line-height:1.5;
+}
+/* ---------- фон: сетка-миллиметровка + аврора + зерно ---------- */
+body::before{
+  content:""; position:fixed; inset:0; z-index:-3; pointer-events:none;
+  background:
+    radial-gradient(1100px 700px at 12% -10%, rgba(99,102,241,.22), transparent 60%),
+    radial-gradient(900px 600px at 105% 110%, rgba(34,211,238,.14), transparent 60%),
+    radial-gradient(700px 500px at 85% 8%, rgba(232,121,249,.10), transparent 60%),
+    var(--bg);
+}
+body::after{
+  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+}
+.bg-grid{
+  position:fixed; inset:0; z-index:-2; pointer-events:none; opacity:.5;
+  background-image:radial-gradient(circle, rgba(148,163,255,.09) 1px, transparent 1.4px);
+  background-size:30px 30px;
+  mask-image:radial-gradient(1200px 800px at 50% 20%, #000 30%, transparent 90%);
+  -webkit-mask-image:radial-gradient(1200px 800px at 50% 20%, #000 30%, transparent 90%);
+}
+.aurora{position:fixed; z-index:-2; border-radius:50%; filter:blur(90px); opacity:.5; pointer-events:none}
+.aurora.a1{width:520px;height:520px;left:-160px;top:-140px;background:radial-gradient(circle,#4338ca,transparent 65%);animation:drift1 26s ease-in-out infinite alternate}
+.aurora.a2{width:460px;height:460px;right:-140px;bottom:-160px;background:radial-gradient(circle,#0e7490,transparent 65%);animation:drift2 34s ease-in-out infinite alternate}
+.aurora.a3{width:340px;height:340px;right:16%;top:-120px;background:radial-gradient(circle,#86198f,transparent 65%);opacity:.32;animation:drift1 40s ease-in-out infinite alternate-reverse}
+@keyframes drift1{from{transform:translate(0,0) scale(1)}to{transform:translate(90px,60px) scale(1.15)}}
+@keyframes drift2{from{transform:translate(0,0) scale(1.1)}to{transform:translate(-80px,-70px) scale(.95)}}
+/* ---------- скроллбары в палитре проекта ---------- */
+*{scrollbar-width:thin;scrollbar-color:#3b4370 #0b1124}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:#0b1124;border-radius:8px}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#4f5ae8,#22d3ee);border-radius:8px;border:2px solid #0b1124}
+::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#6366f1,#67e8f9)}
+/* ---------- шапка ---------- */
+header{
+  position:fixed; top:0; left:0; right:0; height:var(--header-h); z-index:50;
+  display:flex; align-items:center; gap:18px; padding:0 22px;
+  background:rgba(9,13,29,.82); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.logo{display:flex;align-items:center;gap:11px;flex-shrink:0}
+.logo-mark{width:36px;height:36px;border-radius:10px;background:var(--grad-primary);display:grid;place-items:center;box-shadow:0 0 22px rgba(99,102,241,.55)}
+.logo-mark svg{width:22px;height:22px;color:#fff}
+.logo-name{font-family:var(--font-d);font-weight:900;font-size:19px;letter-spacing:.5px;background:linear-gradient(90deg,#c7d2fe,#22d3ee);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.logo-badge{font-family:var(--font-m);font-size:10.5px;color:var(--muted);border:1px solid var(--line2);padding:3px 9px;border-radius:99px;white-space:nowrap}
+nav.tabs{display:flex;gap:6px;margin-left:auto;margin-right:auto;overflow-x:auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+.tab-btn{
+  font-family:var(--font-b);font-weight:700;font-size:13.5px;color:var(--muted);
+  background:transparent;border:1px solid transparent;border-radius:10px;padding:8px 16px;cursor:pointer;
+  display:flex;align-items:center;gap:7px;white-space:nowrap;transition:all .18s;
+}
+.tab-btn svg{width:15px;height:15px}
+.tab-btn:hover{color:var(--ink);background:var(--surface2)}
+.tab-btn.active{color:#fff;background:var(--grad-primary);box-shadow:0 4px 18px rgba(99,102,241,.45)}
+.hdr-actions{display:flex;gap:8px;flex-shrink:0}
+.icon-btn{
+  width:38px;height:38px;border-radius:10px;border:1px solid var(--line2);background:var(--surface2);
+  color:var(--muted);cursor:pointer;display:grid;place-items:center;transition:all .18s;position:relative;
+}
+.icon-btn svg{width:17px;height:17px}
+.icon-btn:hover{color:var(--ink);border-color:var(--cyan);box-shadow:0 0 14px rgba(34,211,238,.25);transform:translateY(-1px)}
+.icon-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.icon-btn.on{color:var(--cyan);border-color:rgba(34,211,238,.5)}
+.icon-btn.off{color:var(--muted2)}
+/* ---------- раскладка ---------- */
+main{padding:calc(var(--header-h) + 20px) 22px 40px;max-width:1720px;margin:0 auto}
+.panel{display:none}
+.panel.active{display:block;animation:panelIn .4s ease both}
+@keyframes panelIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.geo-grid{display:grid;grid-template-columns:352px minmax(0,1fr);gap:20px;align-items:start}
+.sidebar{
+  position:sticky;top:calc(var(--header-h) + 16px);
+  max-height:calc(100vh - var(--header-h) - 32px);overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;gap:14px;padding-right:6px;
+}
+.card{
+  background:linear-gradient(180deg,var(--surface2),var(--surface));
+  border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--shadow);
+}
+.card h3{
+  font-size:11px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:8px;margin-bottom:12px;
+}
+.card h3 svg{width:14px;height:14px;color:var(--cyan)}
+.card h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent)}
+.entrance{animation:fadeUp .55s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+/* ---------- элементы управления ---------- */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:5px}
+.seg button{
+  border:none;border-radius:8px;padding:9px 6px;cursor:pointer;font-family:var(--font-b);font-weight:700;font-size:12px;
+  background:transparent;color:var(--muted);transition:all .18s;display:flex;flex-direction:column;gap:2px;align-items:center;
+}
+.seg button small{font-weight:600;font-size:10px;opacity:.75;font-family:var(--font-m)}
+.seg button.active{background:var(--grad-primary);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.4)}
+.seg button.active small{opacity:.9}
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chip-btn{
+  display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:var(--r-sm);cursor:pointer;
+  background:var(--surface);border:1px solid var(--line);color:var(--ink);font-family:var(--font-b);font-weight:600;font-size:12px;
+  transition:all .16s;text-align:left;
+}
+.chip-btn svg{width:15px;height:15px;flex-shrink:0}
+.chip-btn:hover{transform:translateY(-2px);border-color:var(--line2);box-shadow:0 6px 16px rgba(3,6,20,.5)}
+.chip-btn.c1 svg{color:var(--amber)} .chip-btn.c1:hover{border-color:rgba(255,176,32,.55)}
+.chip-btn.c2 svg{color:var(--lime)} .chip-btn.c2:hover{border-color:rgba(163,230,53,.55)}
+.chip-btn.c3 svg{color:var(--magenta)} .chip-btn.c3:hover{border-color:rgba(232,121,249,.55)}
+.chip-btn.c4 svg{color:var(--info)} .chip-btn.c4:hover{border-color:rgba(56,189,248,.55)}
+label.f-label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin:10px 0 5px;letter-spacing:.3px}
+textarea,input[type=text],input[type=number],select{
+  width:100%;background:#0a1022;border:1px solid var(--line2);border-radius:var(--r-sm);color:var(--ink);
+  font-family:var(--font-m);font-size:12.5px;padding:9px 11px;transition:border-color .15s, box-shadow .15s;
+}
+textarea{resize:vertical;min-height:118px;line-height:1.65}
+textarea:focus,input:focus,select:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.14)}
+select{font-family:var(--font-b);font-weight:600;cursor:pointer}
+select option{background:var(--surface2)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;
+  font-family:var(--font-b);font-weight:800;font-size:13px;border-radius:var(--r-sm);padding:10px 15px;
+  transition:all .16s;color:var(--ink);background:var(--surface3);border:1px solid var(--line2);
+}
+.btn svg{width:15px;height:15px}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(3,6,20,.5);border-color:var(--muted2)}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--grad-primary);border:none;color:#fff;box-shadow:0 6px 20px rgba(99,102,241,.4)}
+.btn-primary:hover{box-shadow:0 10px 28px rgba(59,130,246,.55)}
+.btn-cyan{background:linear-gradient(135deg,#0891b2,#22d3ee);border:none;color:#04121c}
+.btn-cyan:hover{box-shadow:0 10px 26px rgba(34,211,238,.4)}
+.btn-ghost{background:transparent}
+.btn-big{width:100%;padding:13px;font-size:14px;letter-spacing:.3px}
+.btn:disabled{opacity:.5;cursor:wait;transform:none}
+.btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.btn-row .btn{flex:1;min-width:0}
+.mini-input{width:64px!important;flex:0 0 auto;text-align:center}
+.warn-inline{
+  display:none;margin-top:9px;font-size:12px;font-weight:600;color:#fda4af;background:rgba(251,77,109,.1);
+  border:1px solid rgba(251,77,109,.35);border-radius:8px;padding:8px 10px;line-height:1.45;
+}
+.warn-inline.show{display:flex;gap:7px;align-items:flex-start}
+.warn-inline svg{width:14px;height:14px;flex-shrink:0;margin-top:2px;color:var(--red)}
+/* слайдеры */
+.slider-row{display:flex;align-items:center;gap:9px;margin:4px 0 2px}
+.slider-row .val{font-family:var(--font-m);font-size:12px;color:var(--cyan);min-width:46px;text-align:right}
+.step-btn{width:26px;height:26px;flex-shrink:0;border-radius:7px;border:1px solid var(--line2);background:var(--surface);color:var(--muted);cursor:pointer;font-weight:800;font-size:14px;line-height:1;transition:all .15s}
+.step-btn:hover{color:var(--cyan);border-color:var(--cyan)}
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:6px;border-radius:99px;background:linear-gradient(90deg,var(--blue) 50%,#1c2547 50%);outline:none;cursor:pointer;border:none;padding:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:#fff;border:3px solid var(--blue);box-shadow:0 0 10px rgba(99,102,241,.7);cursor:grab;transition:transform .12s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
+input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.2)}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:#fff;border:3px solid var(--blue);box-shadow:0 0 10px rgba(99,102,241,.7);cursor:grab}
+input[type=range]::-moz-range-track{background:transparent}
+/* тумблеры */
+.toggles{display:flex;flex-direction:column;gap:2px;margin-top:8px}
+.switch{display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 4px;border-radius:8px;transition:background .15s;user-select:none}
+.switch:hover{background:rgba(148,163,255,.06)}
+.switch input{position:absolute;opacity:0;width:0;height:0}
+.switch .track{width:34px;height:19px;flex-shrink:0;border-radius:99px;background:#1c2547;border:1px solid var(--line2);position:relative;transition:all .2s}
+.switch .track::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:var(--muted);transition:all .2s}
+.switch input:checked + .track{background:var(--grad-primary);border-color:transparent;box-shadow:0 0 10px rgba(99,102,241,.5)}
+.switch input:checked + .track::after{left:17px;background:#fff}
+.switch input:focus-visible + .track{outline:2px solid var(--cyan);outline-offset:2px}
+.switch span.lbl{font-size:12.5px;font-weight:600;color:var(--ink)}
+.switch small{margin-left:auto;font-family:var(--font-m);font-size:10px;color:var(--muted2)}
+/* ---------- сцена ---------- */
+.stage-col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.stage-card{background:linear-gradient(180deg,var(--surface2),var(--surface));border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
+.stage-head{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.stage-head h2{font-family:var(--font-d);font-size:15px;font-weight:700}
+.stage-head p{font-size:11.5px;color:var(--muted)}
+.stage{position:relative;border-radius:11px;overflow:hidden;border:1px solid var(--line2);background:#0a0f22;height:min(66vh,640px);min-height:360px}
+#cv{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none}
+.hud{position:absolute;top:10px;left:10px;display:flex;gap:7px;pointer-events:none;flex-wrap:wrap}
+.hud-chip{font-family:var(--font-m);font-size:10.5px;font-weight:600;padding:4px 10px;border-radius:99px;background:rgba(9,13,29,.8);border:1px solid var(--line2);color:var(--muted);backdrop-filter:blur(6px)}
+.hud-chip b{color:var(--cyan);font-weight:700}
+.hud-chip.mode b{color:var(--violet)}
+.hint{position:absolute;top:10px;right:10px;font-size:10px;color:var(--muted2);background:rgba(9,13,29,.72);border:1px solid var(--line);padding:4px 10px;border-radius:99px;pointer-events:none;backdrop-filter:blur(6px)}
+.legend{position:absolute;left:10px;bottom:10px;display:flex;gap:12px;pointer-events:none;background:rgba(9,13,29,.8);border:1px solid var(--line);border-radius:99px;padding:5px 13px;backdrop-filter:blur(6px);flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:var(--muted)}
+.legend i{width:16px;height:3px;border-radius:2px;display:inline-block}
+.coord-chip{position:absolute;right:10px;bottom:10px;font-family:var(--font-m);font-size:11px;color:var(--cyan);background:rgba(9,13,29,.85);border:1px solid rgba(34,211,238,.35);border-radius:99px;padding:5px 12px;pointer-events:none;backdrop-filter:blur(6px)}
+/* статистика */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:linear-gradient(180deg,var(--surface2),var(--surface));border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;transition:transform .18s}
+.stat:hover{transform:translateY(-3px)}
+.stat::before{content:"";position:absolute;top:0;left:0;right:0;height:3px}
+.stat.s1::before{background:linear-gradient(90deg,var(--amber),transparent)}
+.stat.s2::before{background:linear-gradient(90deg,var(--cyan),transparent)}
+.stat.s3::before{background:linear-gradient(90deg,var(--blue),transparent)}
+.stat.s4::before{background:linear-gradient(90deg,var(--magenta),transparent)}
+.stat .s-lbl{font-size:10.5px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);display:flex;gap:7px;align-items:center}
+.stat .s-lbl svg{width:13px;height:13px}
+.stat.s1 .s-lbl svg{color:var(--amber)} .stat.s2 .s-lbl svg{color:var(--cyan)} .stat.s3 .s-lbl svg{color:var(--blue2)} .stat.s4 .s-lbl svg{color:var(--magenta)}
+.stat .s-val{font-family:var(--font-d);font-size:24px;font-weight:700;margin-top:6px;line-height:1.1}
+.stat.s1 .s-val{color:var(--amber)} .stat.s2 .s-val{color:var(--cyan)} .stat.s3 .s-val{color:#93c5fd} .stat.s4 .s-val{color:var(--magenta);font-size:17px;padding-top:5px}
+.stat .s-sub{font-size:10.5px;color:var(--muted2);margin-top:3px;font-family:var(--font-m)}
+/* таблицы */
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+th{font-size:10.5px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 14px;background:rgba(9,13,29,.6);border-bottom:1px solid var(--line2);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:background .14s}
+tbody tr:hover{background:rgba(148,163,255,.05)}
+td.num,th.num{text-align:right;font-family:var(--font-m);font-size:12.5px}
+.m-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;vertical-align:1px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;padding:3px 10px;border-radius:99px;font-family:var(--font-m)}
+.pill.ok{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.4)}
+.pill.bad{background:rgba(251,77,109,.12);color:#fda4af;border:1px solid rgba(251,77,109,.4)}
+.pill.na{background:rgba(139,147,184,.1);color:var(--muted);border:1px solid var(--line2)}
+.note{font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px}
+.note b{color:var(--ink)}
+.stale-chip{display:none;font-size:10.5px;font-weight:700;color:var(--amber);border:1px solid rgba(255,176,32,.4);background:rgba(255,176,32,.08);padding:3px 10px;border-radius:99px}
+.stale-chip.show{display:inline-flex;align-items:center;gap:5px}
+.sec-head{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.sec-head h2{font-family:var(--font-d);font-size:15px;font-weight:700}
+.sec-head .btn{margin-left:auto}
+details.mismatch{margin-top:10px;font-size:12px;color:#fda4af}
+details.mismatch summary{cursor:pointer;font-weight:700}
+details.mismatch pre{font-family:var(--font-m);font-size:11px;background:#0a1022;border:1px solid rgba(251,77,109,.3);border-radius:8px;padding:10px;margin-top:8px;overflow-x:auto;line-height:1.7}
+/* бенчмарк / теория / проверки */
+.wide-grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:20px;align-items:start}
+.field-row{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.field-row label{flex:1;font-size:12.5px;font-weight:700;color:var(--muted)}
+.field-row input,.field-row select{width:110px}
+.bench-summary{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+.sum-chip{font-size:12px;font-weight:700;padding:7px 14px;border-radius:99px;border:1px solid var(--line2);background:var(--surface);display:flex;gap:7px;align-items:center}
+.sum-chip svg{width:14px;height:14px}
+.sum-chip.cyan{color:var(--cyan);border-color:rgba(34,211,238,.4)}
+.sum-chip.mag{color:var(--magenta);border-color:rgba(232,121,249,.4)}
+.sum-chip.lime{color:var(--lime);border-color:rgba(163,230,53,.4)}
+#benchChart{width:100%;height:300px;display:block;border-radius:10px;border:1px solid var(--line);background:#0a0f22}
+.theory-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.theory-card{background:linear-gradient(180deg,var(--surface2),var(--surface));border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:var(--shadow)}
+.theory-card h2{font-family:var(--font-d);font-size:16px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+.theory-card h2 .tag{font-family:var(--font-m);font-size:10px;padding:3px 9px;border-radius:99px;font-weight:600}
+.tag.t-cyan{background:rgba(34,211,238,.12);color:var(--cyan);border:1px solid rgba(34,211,238,.4)}
+.tag.t-mag{background:rgba(232,121,249,.12);color:var(--magenta);border:1px solid rgba(232,121,249,.4)}
+.theory-card .sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.theory-card h4{font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--cyan);margin:18px 0 8px}
+.theory-card p,.theory-card li{font-size:13.5px;color:#c3c9e8;line-height:1.7}
+.theory-card ol,.theory-card ul{padding-left:20px;display:flex;flex-direction:column;gap:5px}
+.formula{font-family:var(--font-m);font-size:13px;background:#0a1022;border:1px solid var(--line2);border-left:3px solid var(--cyan);border-radius:8px;padding:11px 14px;margin:10px 0;color:#a5f3fc;overflow-x:auto;white-space:nowrap}
+.formula.mag{border-left-color:var(--magenta);color:#f5d0fe}
+pre.code{font-family:var(--font-m);font-size:11.5px;line-height:1.75;background:#0a1022;border:1px solid var(--line2);border-radius:10px;padding:14px 16px;overflow-x:auto;color:#c3c9e8;margin:10px 0}
+pre.code .c{color:var(--muted2)} pre.code .k{color:var(--cyan)} pre.code .m{color:var(--magenta)} pre.code .a{color:var(--amber)}
+.outcodes{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;max-width:320px;margin:12px auto}
+.oc{font-family:var(--font-m);font-size:13px;font-weight:700;text-align:center;padding:13px 4px;border-radius:8px;background:#0a1022;border:1px solid var(--line2);color:var(--muted)}
+.oc small{display:block;font-size:9px;font-weight:600;color:var(--muted2);margin-top:3px;font-family:var(--font-b)}
+.oc.center{background:rgba(163,230,53,.1);border-color:rgba(163,230,53,.55);color:var(--lime);box-shadow:0 0 16px rgba(163,230,53,.15)}
+.oc.center small{color:rgba(163,230,53,.7)}
+.rules-tbl{width:100%;min-width:0;font-size:12.5px;margin:8px 0}
+.rules-tbl td{padding:7px 10px}
+.rules-tbl td:first-child{font-family:var(--font-m);color:#f5d0fe;white-space:nowrap}
+.qa{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:rgba(9,13,29,.4)}
+.qa b{color:var(--amber);font-size:13px;display:block;margin-bottom:5px}
+.qa p{font-size:12.5px}
+.qa-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.kbd-tbl{width:100%;min-width:0;font-size:12.5px}
+.kbd-tbl td{padding:6px 10px}
+kbd{font-family:var(--font-m);font-size:11px;background:var(--surface3);border:1px solid var(--line2);border-bottom-width:2px;border-radius:6px;padding:2px 8px;color:var(--cyan);white-space:nowrap}
+.theory-svg{width:100%;height:auto;display:block;margin:8px 0}
+/* проверки */
+.checks-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.progress{flex:1;min-width:160px;height:8px;border-radius:99px;background:#1c2547;overflow:hidden;border:1px solid var(--line)}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--cyan),var(--lime));transition:width .3s;border-radius:99px}
+.check-row{
+  display:flex;align-items:center;gap:13px;padding:11px 15px;border:1px solid var(--line);border-radius:10px;
+  background:linear-gradient(180deg,var(--surface2),var(--surface));margin-bottom:8px;
+  opacity:0;transform:translateX(-12px);transition:all .35s;
+}
+.check-row.in{opacity:1;transform:none}
+.check-row .st{width:26px;height:26px;flex-shrink:0;border-radius:8px;display:grid;place-items:center}
+.check-row .st svg{width:14px;height:14px}
+.check-row.pass .st{background:rgba(52,211,153,.14);color:var(--green);border:1px solid rgba(52,211,153,.45)}
+.check-row.fail .st{background:rgba(251,77,109,.14);color:var(--red);border:1px solid rgba(251,77,109,.45)}
+.check-row .nm{font-weight:700;font-size:13px;flex:1;min-width:180px}
+.check-row .dt{font-family:var(--font-m);font-size:10.5px;color:var(--muted);text-align:right;line-height:1.6}
+.check-row .dt b{color:var(--muted2);font-weight:600}
+.check-row.fail .dt{color:#fda4af}
+/* тосты */
+#toasts{position:fixed;top:calc(var(--header-h) + 12px);right:18px;z-index:100;display:flex;flex-direction:column;gap:9px;max-width:min(360px,90vw)}
+.toast{
+  display:flex;gap:11px;align-items:flex-start;padding:12px 15px;border-radius:12px;cursor:pointer;
+  background:rgba(13,20,40,.94);border:1px solid var(--line2);backdrop-filter:blur(10px);
+  box-shadow:0 14px 40px rgba(3,6,20,.6);animation:toastIn .3s cubic-bezier(.2,.9,.3,1.2) both;font-size:13px;font-weight:600;line-height:1.45;
+}
+.toast.out{animation:toastOut .25s ease both}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateX(40px)}}
+.toast svg{width:17px;height:17px;flex-shrink:0;margin-top:1px}
+.toast.success{border-left:3px solid var(--green)} .toast.success svg{color:var(--green)}
+.toast.error{border-left:3px solid var(--red)} .toast.error svg{color:var(--red)}
+.toast.warn{border-left:3px solid var(--amber)} .toast.warn svg{color:var(--amber)}
+.toast.info{border-left:3px solid var(--info)} .toast.info svg{color:var(--info)}
+/* модалка */
+.modal-scrim{position:fixed;inset:0;z-index:90;background:rgba(4,7,18,.7);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:20px}
+.modal-scrim.open{display:flex;animation:panelIn .25s ease both}
+.modal{background:linear-gradient(180deg,var(--surface2),var(--surface));border:1px solid var(--line2);border-radius:18px;max-width:680px;width:100%;max-height:84vh;overflow-y:auto;padding:26px;box-shadow:0 30px 80px rgba(0,0,0,.7)}
+.modal h2{font-family:var(--font-d);font-size:17px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.modal h2 .icon-btn{margin-left:auto}
+.modal h4{font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--cyan);margin:18px 0 8px}
+footer{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted2)}
+footer .f-logo{font-family:var(--font-d);font-weight:700;color:var(--muted)}
+footer a{color:var(--cyan);text-decoration:none;cursor:pointer;font-weight:700}
+footer a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:6px}
+/* ---------- адаптив ---------- */
+@media (max-width:1120px){
+  .geo-grid{grid-template-columns:1fr}
+  .sidebar{position:static;max-height:none;order:2;display:grid;grid-template-columns:1fr 1fr;align-items:start}
+  .stage-col{order:1}
+  .wide-grid,.theory-grid{grid-template-columns:1fr}
+  .qa-grid{grid-template-columns:1fr}
+}
+@media (max-width:720px){
+  header{padding:0 12px;gap:10px}
+  .logo-badge{display:none}
+  .logo-name{font-size:16px}
+  main{padding:calc(var(--header-h) + 14px) 12px 30px}
+  .sidebar{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  .stage{height:56vh;min-height:320px}
+  .hint{display:none}
+  .tab-btn{padding:8px 11px;font-size:12px}
+  .tab-btn span{display:none}
+  .tab-btn svg{width:17px;height:17px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  .aurora{display:none}
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="aurora a1"></div><div class="aurora a2"></div><div class="aurora a3"></div>
+
+<!-- ======= SVG-иконки ======= -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M2 18 L22 4" stroke-width="2.4"/><circle cx="9" cy="13.2" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1.4" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-geo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 20 L21 4"/><rect x="7" y="7" width="10" height="10" rx="1.5"/></symbol>
+    <symbol id="i-bench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20 V10 M10 20 V4 M16 20 V13 M22 20 H2"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20 V2 H6.5 A2.5 2.5 0 0 0 4 4.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20 V17"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 L9 17 L4 12"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 L6 18 M6 6 L18 18"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4 M12 17h.01"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4 M12 8h.01"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M7 4.5v15l13-7.5z"/></symbol>
+    <symbol id="i-cmp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5 M8 21H3v-5 M21 3l-7.5 7.5 M3 21l7.5-7.5"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3"/></symbol>
+    <symbol id="i-img" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></symbol>
+    <symbol id="i-dice" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 8h.01 M16 8h.01 M12 12h.01 M8 16h.01 M16 16h.01" stroke-width="2.6"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3 M16 3h3a2 2 0 0 1 2 2v3 M8 21H5a2 2 0 0 1-2-2v-3 M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-snd" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 L6 9 H2 v6 h4 l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7 M19 5a9 9 0 0 1 0 14"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 L6 9 H2 v6 h4 l5 4z"/><path d="M23 9l-6 6 M17 9l6 6"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3 M12 17h.01"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3v3 M12 18v3 M3 12h3 M18 12h3"/></symbol>
+    <symbol id="i-edge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M1 12h22" stroke-width="2.4"/></symbol>
+    <symbol id="i-vertex" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20 L12 4 L20 20 Z"/><path d="M1 14 L23 8" stroke-width="2.2"/></symbol>
+    <symbol id="i-para" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 8h18 M3 16h18"/></symbol>
+    <symbol id="i-seg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 19 L19 5"/><circle cx="5" cy="19" r="2.2"/><circle cx="19" cy="5" r="2.2"/></symbol>
+    <symbol id="i-win" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="6" width="16" height="12" rx="1.5"/><path d="M4 10h16" opacity=".5"/></symbol>
+    <symbol id="i-poly" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2 L22 9.5 L18 21 H6 L2 9.5 Z"/></symbol>
+    <symbol id="i-view" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-7.5 11-7.5S23 12 23 12s-4 7.5-11 7.5S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2 L3 14h8l-1 8 11-13h-8z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+    <symbol id="i-hash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9h16 M4 15h16 M10 3L8 21 M16 3l-2 18"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94 M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M1 1l22 22"/></symbol>
+    <symbol id="i-lab" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6 M10 3v6.3L4.7 18a2 2 0 0 0 1.7 3h11.2a2 2 0 0 0 1.7-3L14 9.3V3"/><path d="M7.5 14h9"/></symbol>
+  </defs>
+</svg>
+
+<!-- ======= ШАПКА ======= -->
+<header>
+  <div class="logo">
+    <div class="logo-mark"><svg><use href="#i-logo"/></svg></div>
+    <span class="logo-name">ClipLab</span>
+    <span class="logo-badge">ЛР №5 · вариант 10</span>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Разделы">
+    <button class="tab-btn active" role="tab" aria-selected="true" data-tab="geometry"><svg><use href="#i-geo"/></svg><span>Геометрия</span></button>
+    <button class="tab-btn" role="tab" aria-selected="false" data-tab="bench"><svg><use href="#i-bench"/></svg><span>Бенчмарк</span></button>
+    <button class="tab-btn" role="tab" aria-selected="false" data-tab="theory"><svg><use href="#i-book"/></svg><span>Теория</span></button>
+    <button class="tab-btn" role="tab" aria-selected="false" data-tab="checks"><svg><use href="#i-lab"/></svg><span>Проверки</span></button>
+  </nav>
+  <div class="hdr-actions">
+    <button class="icon-btn on" id="btnSound" title="Звук: вкл" aria-pressed="true"><svg><use href="#i-snd"/></svg></button>
+    <button class="icon-btn" id="btnUndo" title="Отменить (Ctrl+Z)" disabled><svg><use href="#i-undo"/></svg></button>
+    <button class="icon-btn" id="btnHelp" title="Справка (?)" ><svg><use href="#i-help"/></svg></button>
+  </div>
+</header>
+
+<main>
+<!-- ================= ГЕОМЕТРИЯ ================= -->
+<section class="panel active" id="panel-geometry" role="tabpanel">
+  <div class="geo-grid">
+
+    <!-- ===== Панель управления ===== -->
+    <aside class="sidebar">
+      <div class="card entrance" style="animation-delay:.05s">
+        <h3><svg><use href="#i-target"/></svg>Режим · часть работы</h3>
+        <div class="seg" id="modeSeg">
+          <button class="active" data-mode="1">Часть 1<small>Сазерленд–Коэн</small></button>
+          <button data-mode="2">Часть 2<small>Кирус–Бек</small></button>
+        </div>
+        <label class="f-label">Тестовые ситуации</label>
+        <div class="preset-grid">
+          <button class="chip-btn c1" data-preset="cross"><svg><use href="#i-seg"/></svg>Пересечения</button>
+          <button class="chip-btn c2" data-preset="bound"><svg><use href="#i-edge"/></svg>На границах</button>
+          <button class="chip-btn c3" data-preset="vertex"><svg><use href="#i-vertex"/></svg>Через вершины</button>
+          <button class="chip-btn c4" data-preset="para"><svg><use href="#i-para"/></svg>Параллельные</button>
+        </div>
+      </div>
+
+      <div class="card entrance" style="animation-delay:.1s">
+        <h3><svg><use href="#i-seg"/></svg>Отрезки · X₁ Y₁ X₂ Y₂</h3>
+        <textarea id="segText" spellcheck="false" aria-label="Координаты отрезков"></textarea>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnApplySeg"><svg><use href="#i-check"/></svg>Применить</button>
+          <input type="number" class="mini-input" id="randCount" value="12" min="1" max="200" title="Количество случайных отрезков">
+          <button class="btn" id="btnRandom" title="Случайные отрезки"><svg><use href="#i-dice"/></svg></button>
+        </div>
+      </div>
+
+      <div class="card entrance" style="animation-delay:.15s" id="winGroup">
+        <h3><svg><use href="#i-win"/></svg>Окно · Xmin Ymin Xmax Ymax</h3>
+        <input type="text" id="winText" spellcheck="false" aria-label="Координаты окна">
+        <div class="btn-row"><button class="btn btn-primary" id="btnApplyWin"><svg><use href="#i-check"/></svg>Применить окно</button></div>
+        <p class="note">Тащите окно за внутренность, углы — за маркеры.</p>
+      </div>
+
+      <div class="card entrance" style="animation-delay:.15s;display:none" id="polyGroup">
+        <h3><svg><use href="#i-poly"/></svg>Выпуклый отсекатель</h3>
+        <select id="polyPreset" aria-label="Шаблон многоугольника">
+          <option value="rhomb">Ромб</option>
+          <option value="tri">Треугольник</option>
+          <option value="hex">Шестиугольник</option>
+          <option value="rect">Прямоугольник</option>
+        </select>
+        <label class="f-label">Вершины · X Y (по одной на строку)</label>
+        <textarea id="polyText" spellcheck="false" style="min-height:104px" aria-label="Вершины многоугольника"></textarea>
+        <div class="btn-row"><button class="btn btn-primary" id="btnApplyPoly"><svg><use href="#i-check"/></svg>Применить</button></div>
+        <div class="warn-inline" id="polyWarn"><svg><use href="#i-warn"/></svg><span></span></div>
+        <p class="note">Рёбра соединяются по порядку. Обход по и против часовой стрелки; невыпуклые контуры не допускаются.</p>
+      </div>
+
+      <div class="card entrance" style="animation-delay:.2s">
+        <h3><svg><use href="#i-zap"/></svg>Действия</h3>
+        <button class="btn btn-cyan btn-big" id="btnClip"><svg><use href="#i-play"/></svg>Применить отсечение</button>
+        <div class="btn-row">
+          <button class="btn" id="btnCompare"><svg><use href="#i-cmp"/></svg>Сравнить методы</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="btnLoad" title="Загрузить .txt"><svg><use href="#i-up"/></svg>.txt</button>
+          <button class="btn" id="btnTxt" title="Скачать TXT"><svg><use href="#i-down"/></svg>TXT</button>
+          <button class="btn" id="btnPng" title="Скачать PNG"><svg><use href="#i-img"/></svg>PNG</button>
+        </div>
+        <input type="file" id="fileInput" accept=".txt,text/plain" hidden>
+      </div>
+
+      <div class="card entrance" style="animation-delay:.25s">
+        <h3><svg><use href="#i-view"/></svg>Вид</h3>
+        <label class="f-label" style="margin-top:0">Масштаб, px/ед</label>
+        <div class="slider-row">
+          <button class="step-btn" id="scaleMinus" title="Уменьшить">−</button>
+          <input type="range" id="scaleRange" min="2" max="40" step="0.5" value="8">
+          <button class="step-btn" id="scalePlus" title="Увеличить">+</button>
+          <span class="val" id="scaleVal">8</span>
+        </div>
+        <label class="f-label">Толщина линий</label>
+        <div class="slider-row">
+          <input type="range" id="widthRange" min="1" max="6" step="0.5" value="2.5">
+          <span class="val" id="widthVal">2.5</span>
+        </div>
+        <label class="f-label">Появление видимых частей, мс</label>
+        <div class="slider-row">
+          <input type="range" id="speedRange" min="150" max="2000" step="50" value="700">
+          <span class="val" id="speedVal">700</span>
+        </div>
+        <div class="toggles">
+          <label class="switch"><input type="checkbox" id="tgGrid" checked><span class="track"></span><span class="lbl">Координатная сетка</span><small>G</small></label>
+          <label class="switch"><input type="checkbox" id="tgAxes" checked><span class="track"></span><span class="lbl">Оси и подписи</span><small>A</small></label>
+          <label class="switch"><input type="checkbox" id="tgOrig" checked><span class="track"></span><span class="lbl">Исходная геометрия</span><small>O</small></label>
+          <label class="switch"><input type="checkbox" id="tgLabels"><span class="track"></span><span class="lbl">Номера и координаты</span><small>L</small></label>
+          <label class="switch" id="rowNormals" style="display:none"><input type="checkbox" id="tgNormals"><span class="track"></span><span class="lbl">Внутренние нормали</span><small>N</small></label>
+          <label class="switch"><input type="checkbox" id="tgAnim" checked><span class="track"></span><span class="lbl">Анимация</span></label>
+          <label class="switch"><input type="checkbox" id="tgSnap" checked><span class="track"></span><span class="lbl">Привязка к сетке</span><small>Shift — своб.</small></label>
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="btnFit"><svg><use href="#i-fit"/></svg>Вписать</button>
+          <button class="btn" id="btnReset"><svg><use href="#i-reset"/></svg>Сброс</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===== Сцена ===== -->
+    <div class="stage-col">
+      <div class="stage-card entrance" style="animation-delay:.12s">
+        <div class="stage-head">
+          <h2>Интерактивная координатная плоскость</h2>
+          <p>Отрезки, окно и вершины можно перетаскивать — отсечение пересчитывается мгновенно.</p>
+        </div>
+        <div class="stage" id="stage">
+          <canvas id="cv"></canvas>
+          <div class="hud">
+            <span class="hud-chip mode">режим: <b id="hudMode">Сазерленд–Коэн</b></span>
+            <span class="hud-chip">масштаб: <b id="hudScale">8</b> px/ед</span>
+          </div>
+          <span class="hint">ЛКМ — тащить · колесо — масштаб · 2×клик — новый отрезок · ПКМ — удалить</span>
+          <div class="legend">
+            <span><i style="background:var(--amber)"></i>Исходные</span>
+            <span><i style="background:var(--lime)" id="legClipBar"></i><span id="legClipName">Окно</span></span>
+            <span><i style="background:var(--cyan)"></i>Видимые</span>
+          </div>
+          <span class="coord-chip" id="coordChip">x: — · y: —</span>
+        </div>
+      </div>
+
+      <div class="stats entrance" style="animation-delay:.18s">
+        <div class="stat s1"><div class="s-lbl"><svg><use href="#i-hash"/></svg>Всего отрезков</div><div class="s-val" id="stTotal">0</div><div class="s-sub">исходная геометрия</div></div>
+        <div class="stat s2"><div class="s-lbl"><svg><use href="#i-eye"/></svg>Видимых объектов</div><div class="s-val" id="stVisible">0</div><div class="s-sub">после отсечения</div></div>
+        <div class="stat s3"><div class="s-lbl"><svg><use href="#i-clock"/></svg>Отсечение</div><div class="s-val" id="stTime">0</div><div class="s-sub">мс · без отрисовки</div></div>
+        <div class="stat s4"><div class="s-lbl"><svg><use href="#i-cmp"/></svg>Арифметика</div><div class="s-val" id="stOps">× 0 · ÷ 0</div><div class="s-sub">умножения · деления</div></div>
+      </div>
+
+      <div class="card entrance" style="animation-delay:.24s">
+        <div class="sec-head">
+          <h2>Сравнение и арифметические операции</h2>
+          <span class="stale-chip" id="cmpStale"><svg width="12" height="12"><use href="#i-warn"/></svg>геометрия изменилась</span>
+          <button class="btn" id="btnCompare2"><svg><use href="#i-cmp"/></svg>Обновить</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Метод</th><th class="num">Время, мс</th><th class="num">Видимых</th><th class="num">Умножений</th><th class="num">Делений</th><th>Независимая проверка</th></tr></thead>
+            <tbody id="cmpBody"></tbody>
+          </table>
+        </div>
+        <details class="mismatch" id="cmpDetails" style="display:none"><summary>Расхождения</summary><pre id="cmpDiff"></pre></details>
+        <p class="note">Счётчики умножений и делений учитываются <b>внутри алгоритма</b>. Для честного сравнения Кирус–Бек запускается по прямоугольнику, эквивалентному окну. Независимая проверка ищет видимую часть третьим способом — через пересечения отрезка с рёбрами и тест принадлежности точки.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= БЕНЧМАРК ================= -->
+<section class="panel" id="panel-bench" role="tabpanel">
+  <div class="wide-grid">
+    <div class="card">
+      <h3><svg><use href="#i-bench"/></svg>Параметры прогона</h3>
+      <p class="note" style="margin:0 0 14px">Случайные отрезки в области [−48; 48]² относительно текущего окна (Сазерленд–Коэн) и многоугольника (Кирус–Бек).</p>
+      <div class="field-row"><label>Число отрезков</label><input type="number" id="bN" value="2000" min="100" max="50000" step="100"></div>
+      <div class="field-row"><label>Зерно ГСЧ</label><input type="number" id="bSeed" value="42" min="1" max="99999"></div>
+      <div class="field-row"><label>Повторов (медиана)</label><select id="bReps"><option>1</option><option selected>3</option><option>5</option></select></div>
+      <label class="switch" style="margin:4px 0 12px"><input type="checkbox" id="bRect"><span class="track"></span><span class="lbl">КБ по окну (прямоугольник)</span></label>
+      <button class="btn btn-primary btn-big" id="btnBench"><svg><use href="#i-play"/></svg>Запустить</button>
+      <p class="note">Время измеряется без счётчиков; операции считаются отдельным.instrumentированным прогоном. Генератор — mulberry32, прогоны воспроизводимы.</p>
+    </div>
+    <div class="card">
+      <div class="sec-head"><h2>Результаты</h2></div>
+      <div class="bench-summary" id="benchSummary"><span class="sum-chip cyan"><svg><use href="#i-info"/></svg>Запустите прогон, чтобы увидеть сравнение</span></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Метод</th><th class="num">Время, мс</th><th class="num">Видимых</th><th class="num">Умножений</th><th class="num">Делений</th></tr></thead>
+          <tbody id="benchBody"><tr><td colspan="5" style="color:var(--muted2)">— нет данных —</td></tr></tbody>
+        </table>
+      </div>
+      <div style="margin-top:16px"><canvas id="benchChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ТЕОРИЯ ================= -->
+<section class="panel" id="panel-theory" role="tabpanel">
+  <div class="theory-grid">
+    <article class="theory-card">
+      <h2>Сазерленд–Коэн <span class="tag t-cyan">часть 1 · явное уравнение</span></h2>
+      <p class="sub">Отсечение отрезков прямоугольным окном. Вариант 10 требует искать пересечения через <b>Ax + By + C = 0</b>, а не через y = kx + b.</p>
+      <h4>Коды областей (outcodes)</h4>
+      <p>Каждому концу отрезка присваивается 4-битный код: <b>бит 1</b> — левее, <b>бит 2</b> — правее, <b>бит 4</b> — ниже, <b>бит 8</b> — выше окна.</p>
+      <div class="outcodes">
+        <div class="oc">1001<small>слева-сверху</small></div><div class="oc">1000<small>сверху</small></div><div class="oc">1010<small>справа-сверху</small></div>
+        <div class="oc">0001<small>слева</small></div><div class="oc center">0000<small>окно</small></div><div class="oc">0010<small>справа</small></div>
+        <div class="oc">0101<small>слева-снизу</small></div><div class="oc">0100<small>снизу</small></div><div class="oc">0110<small>справа-снизу</small></div>
+      </div>
+      <h4>Шаги алгоритма</h4>
+      <ol>
+        <li>Если <b>код₁ | код₂ = 0</b> — отрезок целиком видим, принять.</li>
+        <li>Если <b>код₁ &amp; код₂ ≠ 0</b> — оба конца по одну сторону окна, тривиально отбросить.</li>
+        <li>Иначе взять конец с ненулевым кодом и построить прямую отрезка:</li>
+      </ol>
+      <div class="formula">A = y₂ − y₁,&nbsp;&nbsp;B = x₁ − x₂,&nbsp;&nbsp;C = x₂y₁ − x₁y₂</div>
+      <ol start="4">
+        <li>Пересечение с выбранной границей: для y = Y → <b>x = −(B·Y + C)/A</b>; для x = X → <b>y = −(A·X + C)/B</b>.</li>
+        <li>Заменить конец точкой пересечения, пересчитать его код и повторить.</li>
+      </ol>
+      <h4>Псевдокод</h4>
+      <pre class="code"><span class="c">// коды: 1-лево 2-право 4-низ 8-верх</span>
+<span class="k">пока</span> истина:
+  <span class="k">если</span> (c1 | c2) == 0 → <span class="a">принять</span>
+  <span class="k">если</span> (c1 & c2) != 0 → <span class="m">отбросить</span>
+  c = c1 != 0 ? c1 : c2
+  A = y2−y1; B = x1−x2; C = x2·y1−x1·y2
+  <span class="k">если</span> c & 8: x = −(B·ymax+C)/A; y = ymax
+  <span class="k">иначе если</span> c & 4: x = −(B·ymin+C)/A; y = ymin
+  <span class="k">иначе если</span> c & 2: y = −(A·xmax+C)/B; x = xmax
+  <span class="k">иначе</span>:          y = −(A·xmin+C)/B; x = xmin
+  заменить конец с кодом c, пересчитать код</pre>
+      <p class="note"><b>Сложность:</b> не более 4 отсечений на отрезок. Деление ровно одно на каждое пересечение. Вертикальные и горизонтальные отрезки безопасны: при A = 0 или B = 0 соответствующая граница никогда не выбирается (тривиальное отклонение срабатывает раньше).</p>
+    </article>
+
+    <article class="theory-card">
+      <h2>Кирус–Бек <span class="tag t-mag">часть 2 · выпуклый отсекатель</span></h2>
+      <p class="sub">Отсечение отрезков выпуклым многоугольником через параметрическое задание отрезка и внутренние нормали рёбер.</p>
+      <svg class="theory-svg" viewBox="0 0 340 290" aria-label="Схема Кирус–Бек">
+        <defs>
+          <marker id="arrM" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6z" fill="#e879f9"/></marker>
+          <marker id="arrG" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6z" fill="#34d399"/></marker>
+        </defs>
+        <polygon points="60,150 150,55 262,85 300,195 180,258" fill="rgba(232,121,249,.08)" stroke="#e879f9" stroke-width="2"/>
+        <g stroke="#f0abfc" stroke-width="1.6" opacity=".9">
+          <line x1="105" y1="102" x2="138" y2="128" marker-end="url(#arrM)"/>
+          <line x1="206" y1="70" x2="199" y2="112" marker-end="url(#arrM)"/>
+          <line x1="281" y1="140" x2="240" y2="149" marker-end="url(#arrM)"/>
+          <line x1="240" y1="226" x2="214" y2="196" marker-end="url(#arrM)"/>
+          <line x1="120" y1="204" x2="152" y2="184" marker-end="url(#arrM)"/>
+        </g>
+        <g font-family="JetBrains Mono,monospace" font-size="10" fill="#f0abfc">
+          <text x="140" y="122">n₁</text><text x="188" y="106">n₂</text><text x="228" y="143">n₃</text><text x="204" y="190">n₄</text><text x="156" y="178">n₅</text>
+        </g>
+        <line x1="16" y1="248" x2="326" y2="34" stroke="#ffb020" stroke-width="2" stroke-dasharray="5 4"/>
+        <line x1="118" y1="178" x2="262" y2="78" stroke="#22d3ee" stroke-width="3.4"/>
+        <circle cx="118" cy="178" r="5" fill="#34d399"/><circle cx="262" cy="78" r="5" fill="#fb4d6d"/>
+        <g font-family="JetBrains Mono,monospace" font-size="11" font-weight="700">
+          <text x="92" y="199" fill="#34d399">tE (вход)</text>
+          <text x="252" y="66" fill="#fb4d6d">tL (выход)</text>
+          <text x="20" y="266" fill="#ffb020">P₁</text><text x="312" y="26" fill="#ffb020">P₂</text>
+        </g>
+        <line x1="118" y1="178" x2="96" y2="160" stroke="#34d399" stroke-width="1.6" marker-end="url(#arrG)"/>
+      </svg>
+      <h4>Идея</h4>
+      <div class="formula mag">P(t) = P₁ + t·D,&nbsp;&nbsp;D = P₂ − P₁,&nbsp;&nbsp;t ∈ [0; 1]</div>
+      <p>Выпуклый многоугольник — пересечение полуплоскостей рёбер. Для ребра с точкой Aᵢ и <b>внутренней</b> нормалью nᵢ точка внутри, когда nᵢ·(P − Aᵢ) ≥ 0. Подставляя P(t):</p>
+      <div class="formula mag">tᵢ = −nᵢ·(P₁ − Aᵢ) / (nᵢ·D)</div>
+      <table class="rules-tbl">
+        <tr><td>nᵢ·D &gt; 0</td><td>пересечение <b style="color:var(--green)">входящее</b>: tE = max(tE, tᵢ)</td></tr>
+        <tr><td>nᵢ·D &lt; 0</td><td>пересечение <b style="color:var(--red)">выходящее</b>: tL = min(tL, tᵢ)</td></tr>
+        <tr><td>nᵢ·D = 0</td><td>отрезок параллелен ребру: если снаружи полуплоскости — отбросить</td></tr>
+      </table>
+      <p>Видимая часть существует при <b>tE ≤ tL</b>; её концы — P(tE) и P(tL). Начальные значения: tE = 0, tL = 1.</p>
+      <h4>Псевдокод</h4>
+      <pre class="code">tE = 0; tL = 1; D = P2 − P1
+<span class="k">для каждого</span> ребра (Aᵢ, nᵢ):  <span class="c">// nᵢ — внутрь</span>
+  w = P1 − Aᵢ
+  den = nᵢ·D;  num = nᵢ·w
+  <span class="k">если</span> den == 0:
+    <span class="k">если</span> num &lt; 0 → <span class="m">отбросить</span>; <span class="k">иначе</span> дальше
+  t = −num / den
+  <span class="k">если</span> den &gt; 0: tE = max(tE, t)   <span class="c">// вход</span>
+  <span class="k">иначе</span>:        tL = min(tL, t)   <span class="c">// выход</span>
+  <span class="k">если</span> tE &gt; tL → <span class="m">отбросить</span>
+<span class="a">вернуть</span> P(tE) → P(tL)</pre>
+      <p class="note"><b>Ориентация:</b> знак площади (формула шнурования) задаёт, куда «вывернуть» нормаль (−Eᵧ, Eₓ), чтобы она смотрела внутрь, — поэтому обход по и против часовой стрелки равноправны. <b>Сложность:</b> O(k) на отрезок, k — число рёбер; ровно одно деление на непараллельное ребро.</p>
+    </article>
+  </div>
+
+  <div class="theory-card" style="margin-top:20px">
+    <h2>Формат файла, горячие клавиши и вопросы к защите</h2>
+    <div class="theory-grid" style="margin-top:12px">
+      <div>
+        <h4 style="margin-top:0">Формат входного .txt</h4>
+        <pre class="code"><span class="a">5</span>                      <span class="c">← n — число отрезков</span>
+50 -30 100 80          <span class="c">← X1 Y1 X2 Y2</span>
+-80 -50 -20 -10
+20 20 150 100
+-100 50 50 -50
+30 -80 80 120
+<span class="a">-40 -40 40 40</span>          <span class="c">← Xmin Ymin Xmax Ymax</span>
+<span class="m">4</span>                      <span class="c">← m — вершины (расширение,</span>
+0 62                   <span class="c">   опционально, для части 2)</span>
+72 0
+0 -62
+-72 0</pre>
+        <p class="note">Экспорт TXT сохраняет текущую сцену в этом же формате, поэтому файл можно загрузить обратно без потерь.</p>
+      </div>
+      <div>
+        <h4 style="margin-top:0">Управление</h4>
+        <table class="kbd-tbl">
+          <tr><td><kbd>ЛКМ</kbd></td><td>тащить отрезок / конец / окно / угол / вершину; по пустому месту — панорама</td></tr>
+          <tr><td><kbd>Колесо</kbd></td><td>масштаб к курсору</td></tr>
+          <tr><td><kbd>2×клик</kbd></td><td>новый отрезок в точке</td></tr>
+          <tr><td><kbd>ПКМ</kbd></td><td>удалить отрезок / вершину</td></tr>
+          <tr><td><kbd>Shift</kbd></td><td>временно отключить привязку к сетке</td></tr>
+          <tr><td><kbd>Ctrl+Z</kbd></td><td>отменить действие</td></tr>
+          <tr><td><kbd>Space</kbd></td><td>повторить отсечение с анимацией</td></tr>
+          <tr><td><kbd>1</kbd> / <kbd>2</kbd></td><td>часть 1 / часть 2</td></tr>
+          <tr><td><kbd>F</kbd> <kbd>G</kbd> <kbd>A</kbd> <kbd>O</kbd> <kbd>L</kbd> <kbd>N</kbd></td><td>вписать · сетка · оси · исходные · подписи · нормали</td></tr>
+        </table>
+      </div>
+    </div>
+    <h4>Что спросят на защите</h4>
+    <div class="qa-grid">
+      <div class="qa"><b>Почему явное уравнение, а не y = kx + b?</b><p>У формы y = kx + b вертикальный отрезок даёт бесконечный k — особый случай. В Ax + By + C = 0 вертикаль — это просто B = 0, и пересечение с вертикальной границей в этом случае не выбирается: код обоих концов одинаков по X, срабатывает тривиальное отклонение.</p></div>
+      <div class="qa"><b>Когда Кирус–Бек неприменим?</b><p>Когда отсекатель невыпуклый: его нельзя представить пересечением полуплоскостей рёбер, и интервал [tE, tL] перестаёт описывать видимую часть. Поэтому приложение проверяет выпуклость знаками векторных произведений соседних рёбер.</p></div>
+      <div class="qa"><b>Какой метод дешевле?</b><p>Сазерленд–Коэн выигрывает на тривиальных случаях (только сравнения и битовые операции) и тратит 3 умножения + 1 деление на каждое пересечение. Кирус–Бек тратит ~4 умножения на ребро + 1 деление, зато сразу даёт параметрический интервал и работает с любым выпуклым контуром. Счётчики и бенчмарк это подтверждают численно.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ПРОВЕРКИ ================= -->
+<section class="panel" id="panel-checks" role="tabpanel">
+  <div class="card">
+    <div class="checks-head">
+      <h2 style="font-family:var(--font-d);font-size:15px">Автоматические проверки алгоритмов</h2>
+      <div class="progress"><i id="checksBar"></i></div>
+      <span id="checksSummary" class="pill na">не запускались</span>
+      <button class="btn btn-primary" id="btnChecks"><svg><use href="#i-play"/></svg>Запустить проверки</button>
+    </div>
+    <p class="note" style="margin-bottom:16px">23 теста: тривиальные и нетривиальные случаи, границы, вершины, вырожденные отрезки, ориентация контура, невыпуклость и два свойства-теста на сотнях случайных отрезков (эквивалентность методов и независимая проверка).</p>
+    <div id="checksList"></div>
+  </div>
+</section>
+
+<footer>
+  <span class="f-logo">ClipLab</span>
+  <span>ЛР №5 · вариант 10 · Сазерленд–Коэн (явное уравнение прямой) + Кирус–Бек (выпуклый отсекатель)</span>
+  <span style="margin-left:auto">HTML + CSS + JS · без зависимостей · <a id="footHelp">справка</a></span>
+</footer>
+</main>
+
+<!-- ======= тосты / справка ======= -->
+<div id="toasts" aria-live="polite"></div>
+<div class="modal-scrim" id="helpModal" role="dialog" aria-modal="true" aria-label="Справка">
+  <div class="modal">
+    <h2><svg width="20" height="20" style="color:var(--cyan)"><use href="#i-help"/></svg>Справка
+      <button class="icon-btn" id="btnCloseHelp" title="Закрыть"><svg><use href="#i-x"/></svg></button></h2>
+    <h4>Мышь</h4>
+    <table class="kbd-tbl">
+      <tr><td><kbd>ЛКМ по отрезку</kbd></td><td>переместить целиком; за конец — изменить длину</td></tr>
+      <tr><td><kbd>ЛКМ по окну</kbd></td><td>часть 1: тащить за внутренность, углы — за квадратные маркеры</td></tr>
+      <tr><td><kbd>ЛКМ по контуру</kbd></td><td>часть 2: тащить многоугольник целиком или вершину за маркер</td></tr>
+      <tr><td><kbd>ЛКМ по пустому</kbd></td><td>панорамирование плоскости</td></tr>
+      <tr><td><kbd>2×клик</kbd> / <kbd>ПКМ</kbd></td><td>создать / удалить отрезок (ПКМ по вершине — удалить вершину)</td></tr>
+      <tr><td><kbd>Колесо</kbd></td><td>масштабирование к курсору</td></tr>
+    </table>
+    <h4>Клавиши</h4>
+    <p style="font-size:13px;color:#c3c9e8;line-height:2"><kbd>Ctrl+Z</kbd> отмена · <kbd>Space</kbd> повтор отсечения · <kbd>1</kbd>/<kbd>2</kbd> части · <kbd>F</kbd> вписать · <kbd>G</kbd> сетка · <kbd>A</kbd> оси · <kbd>O</kbd> исходные · <kbd>L</kbd> подписи · <kbd>N</kbd> нормали · <kbd>Shift</kbd> без привязки · <kbd>?</kbd> эта справка</p>
+    <h4>Формат файла</h4>
+    <pre class="code">n
+X1 Y1 X2 Y2   <span class="c">× n строк</span>
+Xmin Ymin Xmax Ymax
+<span class="m">m</span>             <span class="c">← опционально: вершины отсекателя</span>
+X Y           <span class="c">× m строк</span></pre>
+    <p class="note">Все изменения сцены сохраняются в браузере автоматически. «Сброс» возвращает демонстрационный набор.</p>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   ClipLab · ЛР №5 · вариант 10
+   Часть 1: Сазерленд–Коэн через явное уравнение прямой Ax+By+C=0
+   Часть 2: Кирус–Бек — отсечение отрезков выпуклым многоугольником
+   ============================================================ */
+
+/* ---------- утилиты ---------- */
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const f = v => { const r=Math.round(v); return Math.abs(v-r)<1e-9 ? String(r) : String(+v.toFixed(2)); };
+const fInt = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+function mulberry32(seed){ let a=seed>>>0; return function(){ a|=0; a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+
+/* ---------- звук (WebAudio, включается после первого жеста) ---------- */
+const Sound = {
+  on: true, ctx: null, master: null,
+  unlock(){ if(this.ctx) return; try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    this.ctx=new AC(); this.master=this.ctx.createGain(); this.master.gain.value=.14; this.master.connect(this.ctx.destination);
+    if(this.ctx.state==='suspended') this.ctx.resume(); }catch(e){} },
+  beep(freq,dur=.09,type='sine',vol=1,delay=0){ if(!this.on||!this.ctx) return;
+    try{ const t=this.ctx.currentTime+delay, o=this.ctx.createOscillator(), g=this.ctx.createGain();
+    o.type=type; o.frequency.value=freq; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+.008);
+    g.gain.exponentialRampToValueAtTime(.001,t+dur); o.connect(g); g.connect(this.master); o.start(t); o.stop(t+dur+.02);}catch(e){} },
+  click(){ this.beep(1700,.035,'sine',.35); },
+  clip(){ this.beep(523,.1,'triangle',.7); this.beep(784,.14,'triangle',.6,.07); },
+  error(){ this.beep(140,.14,'square',.5); this.beep(110,.16,'square',.45,.09); },
+  pass(){ [523,659,784,1047].forEach((fr,i)=>this.beep(fr,.14,'triangle',.6,i*.09)); },
+  tick(){ this.beep(2300,.02,'sine',.22); }
+};
+try{ const s=localStorage.getItem('cliplab10_sound'); if(s!==null) Sound.on = s==='1'; }catch(e){}
+
+/* ---------- тосты ---------- */
+function toast(msg,type='info',ms=3400){
+  const box=$('toasts'); while(box.children.length>=4) box.firstChild.remove();
+  const el=document.createElement('div'); el.className='toast '+type;
+  const ic={success:'i-check',error:'i-x',warn:'i-warn',info:'i-info'}[type]||'i-info';
+  el.innerHTML=`<svg><use href="#${ic}"/></svg><span></span>`; el.lastChild.textContent=msg;
+  const kill=()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),240); };
+  el.addEventListener('click',kill); box.appendChild(el); setTimeout(kill,ms);
+  if(type==='error') Sound.error();
+}
+
+/* ============================================================
+   АЛГОРИТМ 1 — САЗЕРЛЕНД–КОЭН (явное уравнение прямой)
+   Коды: 1 лево, 2 право, 4 низ, 8 верх.
+   Пересечения ищем из Ax+By+C=0: A=y2−y1, B=x1−x2, C=x2·y1−x1·y2.
+   ops (необязателен): счётчик умножений/делений внутри алгоритма.
+   ============================================================ */
+function clipSC(s,w,ops){
+  let x1=s.x1,y1=s.y1,x2=s.x2,y2=s.y2;
+  const code=(x,y)=>(x<w.xmin?1:0)|(x>w.xmax?2:0)|(y<w.ymin?4:0)|(y>w.ymax?8:0);
+  let c1=code(x1,y1), c2=code(x2,y2);
+  for(let it=0; it<24; it++){
+    if((c1|c2)===0) return {x1,y1,x2,y2};          // целиком внутри
+    if((c1&c2)!==0) return null;                   // тривиально снаружи
+    const out = c1!==0 ? c1 : c2;
+    const A=y2-y1, B=x1-x2;
+    let x,y;
+    if(out&8){ const C=x2*y1-x1*y2; x=-(B*w.ymax+C)/A; y=w.ymax; if(ops){ops.m+=3;ops.d++;}
+      if(Math.abs(x-w.xmin)<1e-9)x=w.xmin; else if(Math.abs(x-w.xmax)<1e-9)x=w.xmax; }
+    else if(out&4){ const C=x2*y1-x1*y2; x=-(B*w.ymin+C)/A; y=w.ymin; if(ops){ops.m+=3;ops.d++;}
+      if(Math.abs(x-w.xmin)<1e-9)x=w.xmin; else if(Math.abs(x-w.xmax)<1e-9)x=w.xmax; }
+    else if(out&2){ const C=x2*y1-x1*y2; y=-(A*w.xmax+C)/B; x=w.xmax; if(ops){ops.m+=3;ops.d++;}
+      if(Math.abs(y-w.ymin)<1e-9)y=w.ymin; else if(Math.abs(y-w.ymax)<1e-9)y=w.ymax; }
+    else { const C=x2*y1-x1*y2; y=-(A*w.xmin+C)/B; x=w.xmin; if(ops){ops.m+=3;ops.d++;}
+      if(Math.abs(y-w.ymin)<1e-9)y=w.ymin; else if(Math.abs(y-w.ymax)<1e-9)y=w.ymax; }
+    if(!isFinite(x)||!isFinite(y)) return null;    // защита от деления на 0
+    if(out===c1){ x1=x; y1=y; c1=code(x1,y1); } else { x2=x; y2=y; c2=code(x2,y2); }
+  }
+  return null;
+}
+
+/* ============================================================
+   АЛГОРИТМ 2 — КИРУС–БЕК
+   Рёбра с внутренними нормалями готовятся один раз (buildEdges).
+   Ориентация контура — по знаку удвоенной площади; выпуклость —
+   по знакам векторных произведений соседних рёбер.
+   ============================================================ */
+function buildEdges(poly){
+  const n=poly.length;
+  if(n<3) return {valid:false, reason:'Нужно минимум 3 вершины.', edges:[]};
+  let area2=0;
+  for(let i=0;i<n;i++){ const a=poly[i], b=poly[(i+1)%n]; area2 += a.x*b.y - b.x*a.y; }
+  if(Math.abs(area2)<1e-9) return {valid:false, reason:'Многоугольник вырожден: нулевая площадь.', edges:[]};
+  let pos=0,neg=0,badIdx=-1;
+  for(let i=0;i<n;i++){
+    const a=poly[i], b=poly[(i+1)%n], c=poly[(i+2)%n];
+    const cr=(b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x);
+    if(cr>1e-9)pos++; else if(cr<-1e-9){neg++; if(badIdx<0)badIdx=(i+1)%n;}
+    if(pos&&neg) return {valid:false, reason:`Контур невыпуклый: излом у вершины №${badIdx+1}. Кирус–Бек требует выпуклый отсекатель.`, edges:[]};
+  }
+  const s = area2>0 ? 1 : -1;                       // по часовой → выворачиваем нормаль
+  const edges=[];
+  for(let i=0;i<n;i++){
+    const a=poly[i], b=poly[(i+1)%n];
+    const ex=b.x-a.x, ey=b.y-a.y;
+    if(ex*ex+ey*ey<1e-18) continue;                 // нулевое ребро пропускаем
+    edges.push({ax:a.x, ay:a.y, nx:-s*ey, ny:s*ex}); // внутренняя нормаль
+  }
+  return {valid:true, reason:'', edges};
+}
+function clipCB(s,edges,ops){
+  const dx=s.x2-s.x1, dy=s.y2-s.y1;
+  let tE=0, tL=1;
+  for(let i=0;i<edges.length;i++){
+    const e=edges[i];
+    const wx=s.x1-e.ax, wy=s.y1-e.ay;
+    const den=e.nx*dx+e.ny*dy, num=e.nx*wx+e.ny*wy;
+    if(ops) ops.m+=4;
+    if(Math.abs(den)<1e-12){ if(num<-1e-9) return null; continue; } // параллелен и снаружи
+    const t=-num/den; if(ops) ops.d++;
+    if(den>0){ if(t>tE)tE=t; } else { if(t<tL)tL=t; }
+    if(tE>tL+1e-12) return null;
+  }
+  if(tE>tL+1e-9) return null;
+  tE=clamp(tE,0,1); tL=clamp(tL,0,1);
+  if(ops) ops.m+=4;
+  return {x1:s.x1+tE*dx, y1:s.y1+tE*dy, x2:s.x1+tL*dx, y2:s.y1+tL*dy};
+}
+
+/* ---------- независимая проверка (третий способ, для «Сравнить») ---------- */
+function pointInPoly(p,poly){
+  const n=poly.length; let inside=false;
+  for(let i=0;i<n;i++){
+    const a=poly[i], b=poly[(i+1)%n];
+    const ex=b.x-a.x, ey=b.y-a.y;
+    const cr=(p.x-a.x)*ey-(p.y-a.y)*ex;
+    const eps=1e-7*Math.max(1,Math.abs(ex),Math.abs(ey));
+    if(Math.abs(cr)<eps && p.x>=Math.min(a.x,b.x)-1e-7 && p.x<=Math.max(a.x,b.x)+1e-7
+       && p.y>=Math.min(a.y,b.y)-1e-7 && p.y<=Math.max(a.y,b.y)+1e-7) return true; // на границе = внутри
+    if((a.y>p.y)!==(b.y>p.y)){
+      const xInt=a.x+(p.y-a.y)*(b.x-a.x)/(b.y-a.y);
+      if(p.x<xInt) inside=!inside;
+    }
+  }
+  return inside;
+}
+function verifyClip(s,poly){
+  const ts=[]; const dx=s.x2-s.x1, dy=s.y2-s.y1;
+  if(pointInPoly({x:s.x1,y:s.y1},poly)) ts.push(0);
+  if(pointInPoly({x:s.x2,y:s.y2},poly)) ts.push(1);
+  const n=poly.length;
+  for(let i=0;i<n;i++){
+    const a=poly[i], b=poly[(i+1)%n];
+    const ex=b.x-a.x, ey=b.y-a.y;
+    if(ex*ex+ey*ey<1e-18) continue;
+    const den=dx*ey-dy*ex, qx=a.x-s.x1, qy=a.y-s.y1;
+    if(Math.abs(den)>1e-12){
+      const t=(qx*ey-qy*ex)/den, u=(qx*dy-qy*dx)/den;
+      if(t>=-1e-9&&t<=1+1e-9&&u>=-1e-9&&u<=1+1e-9) ts.push(clamp(t,0,1));
+    } else if(Math.abs(qx*dy-qy*dx)<1e-9 && (dx!==0||dy!==0)){
+      // коллинеарен ребру: видимая часть — перекрытие проекций
+      if(Math.abs(ex)>=Math.abs(ey)){
+        const lo=Math.max(Math.min(s.x1,s.x2),Math.min(a.x,b.x));
+        const hi=Math.min(Math.max(s.x1,s.x2),Math.max(a.x,b.x));
+        if(lo<=hi+1e-9 && dx!==0){ ts.push(clamp((lo-s.x1)/dx,0,1),clamp((hi-s.x1)/dx,0,1)); }
+      } else {
+        const lo=Math.max(Math.min(s.y1,s.y2),Math.min(a.y,b.y));
+        const hi=Math.min(Math.max(s.y1,s.y2),Math.max(a.y,b.y));
+        if(lo<=hi+1e-9 && dy!==0){ ts.push(clamp((lo-s.y1)/dy,0,1),clamp((hi-s.y1)/dy,0,1)); }
+      }
+    }
+  }
+  if(!ts.length) return null;
+  const t0=Math.min(...ts), t1=Math.max(...ts);
+  return {x1:s.x1+t0*dx, y1:s.y1+t0*dy, x2:s.x1+t1*dx, y2:s.y1+t1*dy};
+}
+const segEq=(a,b,tol=1e-5)=>{
+  if(a===null&&b===null) return true; if(a===null||b===null) return false;
+  return Math.abs(a.x1-b.x1)<tol&&Math.abs(a.y1-b.y1)<tol&&Math.abs(a.x2-b.x2)<tol&&Math.abs(a.y2-b.y2)<tol;
+};
+const segFmt=s=>s?`(${f(s.x1)}, ${f(s.y1)}) → (${f(s.x2)}, ${f(s.y2)})`:'∅ отсечён';
+
+/* ============================================================
+   СОСТОЯНИЕ СЦЕНЫ
+   ============================================================ */
+const state = {
+  mode:1,
+  segments:[],
+  win:{xmin:-40,ymin:-40,xmax:40,ymax:40},
+  polygon:[],
+  polyValid:true, polyReason:'', edges:[],
+  visible:[],
+  view:{scale:8, panX:0, panY:0},
+  toggles:{grid:true,axes:true,orig:true,labels:false,normals:false,anim:!RM,snap:true},
+  lineWidth:2.5, animMs:700,
+  lastOps:{m:0,d:0}, lastTime:0,
+  compareStale:false
+};
+let undoStack=[], drag=null, hover=null, dirty=true, revealAnim=null, persistTimer=null;
+
+function rectPoly(w){ return [{x:w.xmin,y:w.ymin},{x:w.xmax,y:w.ymin},{x:w.xmax,y:w.ymax},{x:w.xmin,y:w.ymax}]; }
+function rebuildPolygon(){
+  const r=buildEdges(state.polygon);
+  state.polyValid=r.valid; state.polyReason=r.reason; state.edges=r.edges;
+  const warn=$('polyWarn');
+  if(!r.valid && state.polygon.length>0){ warn.classList.add('show'); warn.querySelector('span').textContent=r.reason; }
+  else warn.classList.remove('show');
+}
+function snapshot(){ return JSON.stringify({segments:state.segments,win:state.win,polygon:state.polygon}); }
+function pushUndo(){ undoStack.push(snapshot()); if(undoStack.length>60)undoStack.shift(); $('btnUndo').disabled=false; }
+function undo(){
+  if(!undoStack.length) return;
+  const s=JSON.parse(undoStack.pop());
+  state.segments=s.segments; state.win=s.win; state.polygon=s.polygon;
+  rebuildPolygon(); syncInputs(); reclip(); markStale(); dirty=true;
+  $('btnUndo').disabled=!undoStack.length;
+  toast('Действие отменено','info',1800); Sound.click(); persist();
+}
+function persist(){
+  clearTimeout(persistTimer);
+  persistTimer=setTimeout(()=>{ try{ localStorage.setItem('cliplab10_scene',JSON.stringify({v:1,mode:state.mode,segments:state.segments,win:state.win,polygon:state.polygon})); }catch(e){} },400);
+}
+function markStale(){ if($('cmpBody').children.length){ state.compareStale=true; $('cmpStale').classList.add('show'); } }
+
+/* ---------- пересчёт отсечения (мгновенный, живой) ---------- */
+function reclip(){
+  const ops={m:0,d:0};
+  const t0=performance.now();
+  let out=[];
+  if(state.mode===1){ for(const s of state.segments){ const r=clipSC(s,state.win,ops); if(r)out.push(r); } }
+  else if(state.polyValid){ for(const s of state.segments){ const r=clipCB(s,state.edges,ops); if(r)out.push(r); } }
+  state.lastTime=performance.now()-t0;
+  state.visible=out; state.lastOps=ops;
+  $('stTotal').textContent=state.segments.length;
+  $('stVisible').textContent=out.length;
+  $('stTime').textContent=state.lastTime.toFixed(3);
+  $('stOps').textContent=`× ${fInt(ops.m)} · ÷ ${fInt(ops.d)}`;
+  dirty=true;
+}
+function replayClip(){
+  reclip(); markStale();
+  if(state.mode===2&&!state.polyValid){ toast(state.polyReason,'error'); return; }
+  if(state.toggles.anim && state.visible.length){
+    revealAnim={t0:performance.now(), dur:state.animMs, stagger:Math.min(60, 900/state.visible.length)};
+  }
+  Sound.clip();
+  toast(`Отсечение выполнено: видимых ${state.visible.length} из ${state.segments.length} · ${state.lastTime.toFixed(3)} мс`,'success',2600);
+}
+
+/* ---------- синхронизация полей ввода ---------- */
+function syncInputs(){
+  $('segText').value=state.segments.map(s=>`${f(s.x1)} ${f(s.y1)} ${f(s.x2)} ${f(s.y2)}`).join('\n');
+  $('winText').value=`${f(state.win.xmin)} ${f(state.win.ymin)} ${f(state.win.xmax)} ${f(state.win.ymax)}`;
+  $('polyText').value=state.polygon.map(p=>`${f(p.x)} ${f(p.y)}`).join('\n');
+}
+function parseNums(line){ return line.trim().split(/[\s,;]+/).map(Number); }
+
+function applySegText(){
+  const lines=$('segText').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!lines.length){ toast('Введите хотя бы один отрезок: X1 Y1 X2 Y2.','error'); return; }
+  const segs=[];
+  for(let i=0;i<lines.length;i++){
+    const c=parseNums(lines[i]);
+    if(c.length!==4||c.some(v=>!isFinite(v))){ toast(`Строка ${i+1}: ожидалось 4 числа «X1 Y1 X2 Y2», получено «${lines[i]}».`,'error'); return; }
+    segs.push({x1:c[0],y1:c[1],x2:c[2],y2:c[3]});
+  }
+  pushUndo(); state.segments=segs; reclip(); markStale(); syncInputs(); persist();
+  toast(`Загружено отрезков: ${segs.length}`,'success',2200); Sound.click();
+}
+function applyWinText(){
+  const c=parseNums($('winText').value);
+  if(c.length!==4||c.some(v=>!isFinite(v))){ toast('Окно: ожидались 4 числа «Xmin Ymin Xmax Ymax».','error'); return; }
+  let [xmin,ymin,xmax,ymax]=c, swapped=false;
+  if(xmin>xmax){[xmin,xmax]=[xmax,xmin];swapped=true;} if(ymin>ymax){[ymin,ymax]=[ymax,ymin];swapped=true;}
+  if(xmax-xmin<1e-6||ymax-ymin<1e-6){ toast('Окно вырождено: Xmin < Xmax и Ymin < Ymax обязательны.','error'); return; }
+  pushUndo(); state.win={xmin,ymin,xmax,ymax}; reclip(); markStale(); syncInputs(); persist();
+  toast(swapped?'Координаты окна упорядочены автоматически.':'Окно применено.','success',2200); Sound.click();
+}
+function applyPolyText(){
+  const lines=$('polyText').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  const poly=[];
+  for(let i=0;i<lines.length;i++){
+    const c=parseNums(lines[i]);
+    if(c.length!==2||c.some(v=>!isFinite(v))){ toast(`Вершина ${i+1}: ожидалось 2 числа «X Y».`,'error'); return; }
+    poly.push({x:c[0],y:c[1]});
+  }
+  if(poly.length<3){ toast('Многоугольнику нужно минимум 3 вершины.','error'); return; }
+  pushUndo(); state.polygon=poly; rebuildPolygon(); reclip(); markStale(); syncInputs(); persist();
+  if(state.polyValid){ toast(`Отсекатель применён: ${poly.length} вершин, контур выпуклый ✓`,'success',2400); Sound.click(); }
+  else toast(state.polyReason,'error');
+}
+
+/* ---------- шаблоны многоугольника ---------- */
+const POLY_PRESETS={
+  rhomb:[{x:0,y:62},{x:72,y:0},{x:0,y:-62},{x:-72,y:0}],
+  tri:[{x:0,y:70},{x:-66,y:-46},{x:66,y:-46}],
+  hex:Array.from({length:6},(_,i)=>({x:+(62*Math.cos(i*Math.PI/3)).toFixed(1),y:+(62*Math.sin(i*Math.PI/3)).toFixed(1)})),
+  rect:[{x:-55,y:-35},{x:55,y:-35},{x:55,y:35},{x:-55,y:35}]
+};
+function loadPolyPreset(key){
+  pushUndo(); state.polygon=POLY_PRESETS[key].map(p=>({...p}));
+  rebuildPolygon(); reclip(); markStale(); syncInputs(); dirty=true; persist();
+  Sound.click();
+}
+
+/* ---------- тестовые ситуации (зависят от текущего отсекателя) ---------- */
+function clipperBBox(){
+  if(state.mode===1) return {x0:state.win.xmin,y0:state.win.ymin,x1:state.win.xmax,y1:state.win.ymax};
+  const xs=state.polygon.map(p=>p.x), ys=state.polygon.map(p=>p.y);
+  return {x0:Math.min(...xs),y0:Math.min(...ys),x1:Math.max(...xs),y1:Math.max(...ys)};
+}
+function makePreset(kind){
+  if(state.mode===2&&!state.polyValid){ toast('Сначала исправьте отсекатель: '+state.polyReason,'error'); return null; }
+  const b=clipperBBox(), cx=(b.x0+b.x1)/2, cy=(b.y0+b.y1)/2, hw=(b.x1-b.x0)/2, hh=(b.y1-b.y0)/2;
+  const R=(rx,ry)=>[+(cx+rx*hw).toFixed(1), +(cy+ry*hh).toFixed(1)];
+  const S=(a,bb)=>({x1:a[0],y1:a[1],x2:bb[0],y2:bb[1]});
+  let segs=[];
+  if(kind==='cross'){
+    segs=[ S(R(-1.9,-.45),R(.85,.65)), S(R(-.3,-2),R(.45,1.85)), S(R(-1.6,1.45),R(1.65,-1.3)),
+           S(R(.6,.3),R(2.1,1.6)), S(R(-.65,-.3),R(.5,.75)), S(R(-2.1,1.15),R(-1.3,2.15)),
+           S(R(-1.95,-.3),R(-.3,-1.95)), S(R(-1.75,-1.75),R(1.75,1.75)) ];
+  } else if(kind==='bound'){
+    if(state.mode===1){
+      const w=state.win, ex=hw*.5, ey=hh*.5;
+      segs=[ {x1:w.xmin-ex,y1:w.ymin,x2:w.xmax+ex,y2:w.ymin}, {x1:w.xmin,y1:w.ymin-ey,x2:w.xmin,y2:w.ymax+ey},
+             {x1:w.xmin-ex,y1:w.ymax,x2:w.xmax+ex,y2:w.ymax}, {x1:w.xmax,y1:w.ymin-ey,x2:w.xmax,y2:w.ymax+ey},
+             {x1:w.xmin,y1:cy,x2:w.xmax,y2:cy}, {x1:cx,y1:w.ymin,x2:cx,y2:w.ymax} ];
+    } else {
+      const p=state.polygon;
+      for(let i=0;i<Math.min(3,p.length);i++){
+        const a=p[i], c=p[(i+1)%p.length];
+        segs.push({x1:+(a.x-(c.x-a.x)*.3).toFixed(1),y1:+(a.y-(c.y-a.y)*.3).toFixed(1),
+                   x2:+(c.x+(c.x-a.x)*.3).toFixed(1),y2:+(c.y+(c.y-a.y)*.3).toFixed(1)});
+      }
+      segs.push(S(R(-1.6,0),R(1.6,0)), S(R(0,-1.6),R(0,1.6)));
+    }
+  } else if(kind==='vertex'){
+    if(state.mode===1){
+      const w=state.win;
+      segs=[ S(R(-1.75,-1.75),R(1.75,1.75)), S(R(-1.75,1.75),R(1.75,-1.75)),
+             {x1:w.xmin-30,y1:w.ymin+30,x2:w.xmin+30,y2:w.ymin-30},
+             {x1:w.xmax-30,y1:w.ymax+30,x2:w.xmax+30,y2:w.ymax-30},
+             {x1:w.xmin,y1:w.ymin,x2:cx,y2:cy} ];
+    } else {
+      const p=state.polygon;
+      for(let i=0;i<Math.min(3,p.length);i++){
+        const v=p[i];
+        segs.push({x1:+(v.x+(v.x-cx)*.8).toFixed(1), y1:+(v.y+(v.y-cy)*.8).toFixed(1),
+                   x2:+(cx+(cx-v.x)*1.2).toFixed(1), y2:+(cy+(cy-v.y)*1.2).toFixed(1)});
+      }
+      const v=p[0], rx=v.x-cx, ry=v.y-cy, len=Math.hypot(rx,ry)||1;
+      const tx=-ry/len, ty=rx/len, L=Math.max(hw,hh)*.9;
+      segs.push({x1:+(v.x-tx*L).toFixed(1),y1:+(v.y-ty*L).toFixed(1),x2:+(v.x+tx*L).toFixed(1),y2:+(v.y+ty*L).toFixed(1)});
+    }
+  } else { // parallel
+    const ex=hw*1.7, ey=hh*1.7;
+    const ys=[b.y1+hh*.4, b.y1, cy, b.y0, b.y0-hh*.4];
+    const xs=[b.x0-hw*.4, b.x0, cx, b.x1, b.x1+hw*.4];
+    for(const y of ys) segs.push({x1:+(cx-ex).toFixed(1),y1:+y.toFixed(1),x2:+(cx+ex).toFixed(1),y2:+y.toFixed(1)});
+    for(const x of xs) segs.push({x1:+x.toFixed(1),y1:+(cy-ey).toFixed(1),x2:+x.toFixed(1),y2:+(cy+ey).toFixed(1)});
+  }
+  return segs;
+}
+const PRESET_NAMES={cross:'Пересечения',bound:'На границах',vertex:'Через вершины',para:'Параллельные'};
+function applyPreset(kind){
+  const segs=makePreset(kind); if(!segs) return;
+  pushUndo(); state.segments=segs; syncInputs(); reclip(); markStale(); persist();
+  if(state.toggles.anim) revealAnim={t0:performance.now(),dur:state.animMs,stagger:50};
+  Sound.clip(); toast(`Ситуация «${PRESET_NAMES[kind]}»: ${segs.length} отрезков`,'success',2400);
+}
+function randomSegments(){
+  const n=clamp(parseInt($('randCount').value)||12,1,200);
+  const b=clipperBBox(), cx=(b.x0+b.x1)/2, cy=(b.y0+b.y1)/2, hw=(b.x1-b.x0)/2||40, hh=(b.y1-b.y0)/2||40;
+  const rnd=mulberry32((Date.now()%100000)+n);
+  const R=()=>[+(cx+(rnd()*4.4-2.2)*hw).toFixed(1), +(cy+(rnd()*4.4-2.2)*hh).toFixed(1)];
+  pushUndo(); state.segments=[];
+  for(let i=0;i<n;i++){ const a=R(), c=R(); state.segments.push({x1:a[0],y1:a[1],x2:c[0],y2:c[1]}); }
+  syncInputs(); reclip(); markStale(); persist();
+  if(state.toggles.anim) revealAnim={t0:performance.now(),dur:state.animMs,stagger:Math.min(50,800/n)};
+  Sound.clip(); toast(`Сгенерировано отрезков: ${n}`,'success',2200);
+}
+
+/* ---------- режимы ---------- */
+function setMode(m){
+  if(state.mode===m) return;
+  state.mode=m;
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('active',+b.dataset.mode===m));
+  $('winGroup').style.display=m===1?'':'none';
+  $('polyGroup').style.display=m===2?'':'none';
+  $('rowNormals').style.display=m===2?'':'none';
+  $('hudMode').textContent=m===1?'Сазерленд–Коэн':'Кирус–Бек';
+  $('legClipName').textContent=m===1?'Окно':'Многоугольник';
+  $('legClipBar').style.background=m===1?'var(--lime)':'var(--magenta)';
+  hover=null; reclip(); markStale(); dirty=true; persist(); Sound.click();
+}
+
+/* ============================================================
+   КАНВАС: трансформации, отрисовка, взаимодействие
+   ============================================================ */
+const cv=$('cv'), ctx=cv.getContext('2d'), stage=$('stage');
+let cssW=800, cssH=520, dpr=1;
+function resize(){
+  const r=stage.getBoundingClientRect();
+  cssW=Math.max(50,r.width); cssH=Math.max(50,r.height);
+  dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=Math.round(cssW*dpr); cv.height=Math.round(cssH*dpr);
+  dirty=true;
+}
+const toPx=(x,y)=>({x:cssW/2+state.view.panX+x*state.view.scale, y:cssH/2+state.view.panY-y*state.view.scale});
+const toWorld=(px,py)=>({x:(px-cssW/2-state.view.panX)/state.view.scale, y:(cssH/2+state.view.panY-py)/state.view.scale});
+function gridStep(){
+  const raw=48/state.view.scale, p=Math.pow(10,Math.floor(Math.log10(raw)));
+  for(const m of [1,2,5,10]) if(m*p>=raw) return m*p;
+  return 10*p;
+}
+function setScale(v,anchorPx){
+  v=clamp(v,2,40);
+  if(anchorPx){ const w=toWorld(anchorPx.x,anchorPx.y); state.view.scale=v;
+    state.view.panX=anchorPx.x-cssW/2-w.x*v; state.view.panY=anchorPx.y-cssH/2+w.y*v; }
+  else state.view.scale=v;
+  $('scaleRange').value=v; $('scaleVal').textContent=f(v); $('hudScale').textContent=f(v); paintRange($('scaleRange'));
+  dirty=true;
+}
+function fitView(){
+  const pts=[];
+  for(const s of state.segments){ pts.push({x:s.x1,y:s.y1},{x:s.x2,y:s.y2}); }
+  const b=clipperBBox(); pts.push({x:b.x0,y:b.y0},{x:b.x1,y:b.y1});
+  if(!pts.length) return;
+  const xs=pts.map(p=>p.x), ys=pts.map(p=>p.y);
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const bw=Math.max(1,x1-x0), bh=Math.max(1,y1-y0);
+  const sc=clamp(Math.min((cssW-90)/bw,(cssH-90)/bh),2,40);
+  state.view.scale=sc;
+  state.view.panX=-(x0+x1)/2*sc; state.view.panY=(y0+y1)/2*sc;
+  $('scaleRange').value=sc; $('scaleVal').textContent=f(sc); $('hudScale').textContent=f(sc); paintRange($('scaleRange'));
+  dirty=true;
+}
+function paintRange(r){
+  const p=(r.value-r.min)/(r.max-r.min)*100;
+  r.style.background=`linear-gradient(90deg,var(--blue) ${p}%,#1c2547 ${p}%)`;
+}
+
+/* ---------- отрисовка ---------- */
+function draw(now){
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const g=ctx.createLinearGradient(0,0,0,cssH);
+  g.addColorStop(0,'#0c1226'); g.addColorStop(1,'#090e1f');
+  ctx.fillStyle=g; ctx.fillRect(0,0,cssW,cssH);
+  const v=state.view, step=gridStep();
+  const wTL=toWorld(0,0), wBR=toWorld(cssW,cssH);
+
+  if(state.toggles.grid){
+    ctx.strokeStyle='rgba(148,163,255,.08)'; ctx.lineWidth=1; ctx.beginPath();
+    for(let x=Math.ceil(wTL.x/step)*step; x<=wBR.x; x+=step){ const p=toPx(x,0); ctx.moveTo(p.x,0); ctx.lineTo(p.x,cssH); }
+    for(let y=Math.ceil(wBR.y/step)*step; y<=wTL.y; y+=step){ const p=toPx(0,y); ctx.moveTo(0,p.y); ctx.lineTo(cssW,p.y); }
+    ctx.stroke();
+  }
+  if(state.toggles.axes){
+    const o=toPx(0,0);
+    ctx.strokeStyle='rgba(139,147,184,.55)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(0,o.y); ctx.lineTo(cssW,o.y); ctx.moveTo(o.x,0); ctx.lineTo(o.x,cssH); ctx.stroke();
+    // стрелки
+    ctx.fillStyle='rgba(139,147,184,.8)';
+    ctx.beginPath(); ctx.moveTo(cssW-2,o.y); ctx.lineTo(cssW-11,o.y-4.5); ctx.lineTo(cssW-11,o.y+4.5); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(o.x,2); ctx.lineTo(o.x-4.5,11); ctx.lineTo(o.x+4.5,11); ctx.fill();
+    ctx.font='600 10px JetBrains Mono,monospace'; ctx.fillStyle='rgba(139,147,184,.75)';
+    ctx.textAlign='center';
+    for(let x=Math.ceil(wTL.x/step)*step; x<=wBR.x; x+=step){
+      if(Math.abs(x)<step/2) continue; const p=toPx(x,0);
+      if(p.x>16&&p.x<cssW-16){ ctx.fillText(f(x),p.x,clamp(o.y+14,12,cssH-5)); }
+    }
+    ctx.textAlign='right';
+    for(let y=Math.ceil(wBR.y/step)*step; y<=wTL.y; y+=step){
+      if(Math.abs(y)<step/2) continue; const p=toPx(0,y);
+      if(p.y>12&&p.y<cssH-12){ ctx.fillText(f(y),clamp(o.x-7,30,cssW-6),p.y+3); }
+    }
+    ctx.fillText('0',clamp(o.x-7,30,cssW-6),clamp(o.y+14,12,cssH-5));
+    ctx.textAlign='left'; ctx.fillStyle='rgba(139,147,184,.9)';
+    ctx.fillText('x',cssW-14,clamp(o.y-8,12,cssH-6)); ctx.fillText('y',clamp(o.x+8,4,cssW-14),14);
+  }
+
+  const animate=state.toggles.anim&&!RM;
+  /* отсекатель */
+  if(state.mode===1){
+    const a=toPx(state.win.xmin,state.win.ymax), b=toPx(state.win.xmax,state.win.ymin);
+    const wd=b.x-a.x, ht=b.y-a.y;
+    ctx.fillStyle='rgba(163,230,53,.06)'; ctx.fillRect(a.x,a.y,wd,ht);
+    ctx.save();
+    ctx.shadowColor='rgba(163,230,53,.6)'; ctx.shadowBlur=animate?10+4*Math.sin(now/600):10;
+    ctx.strokeStyle='#a3e635'; ctx.lineWidth=2; ctx.strokeRect(a.x,a.y,wd,ht);
+    ctx.restore();
+    if(animate){ ctx.save(); ctx.strokeStyle='rgba(217,249,157,.8)'; ctx.lineWidth=1;
+      ctx.setLineDash([5,7]); ctx.lineDashOffset=-(now/45)%12; ctx.strokeRect(a.x,a.y,wd,ht); ctx.restore(); }
+    // угловые маркеры
+    for(const c of [[state.win.xmin,state.win.ymin],[state.win.xmax,state.win.ymin],[state.win.xmax,state.win.ymax],[state.win.xmin,state.win.ymax]]){
+      const p=toPx(c[0],c[1]);
+      ctx.fillStyle='#0a0f22'; ctx.strokeStyle='#a3e635'; ctx.lineWidth=1.6;
+      ctx.beginPath(); ctx.rect(p.x-4,p.y-4,8,8); ctx.fill(); ctx.stroke();
+    }
+    if(state.toggles.labels){
+      ctx.font='600 10px JetBrains Mono,monospace'; ctx.fillStyle='rgba(163,230,53,.85)'; ctx.textAlign='left';
+      const p1=toPx(state.win.xmin,state.win.ymin), p2=toPx(state.win.xmax,state.win.ymax);
+      ctx.fillText(`(${f(state.win.xmin)}, ${f(state.win.ymin)})`,p1.x+7,p1.y+14);
+      ctx.fillText(`(${f(state.win.xmax)}, ${f(state.win.ymax)})`,p2.x+7,p2.y-7);
+    }
+  } else if(state.polygon.length>=3){
+    const col=state.polyValid?'#e879f9':'#fb4d6d';
+    ctx.beginPath();
+    state.polygon.forEach((p,i)=>{ const q=toPx(p.x,p.y); i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y); });
+    ctx.closePath();
+    ctx.fillStyle=state.polyValid?'rgba(232,121,249,.07)':'rgba(251,77,109,.07)'; ctx.fill();
+    ctx.save(); ctx.shadowColor=state.polyValid?'rgba(232,121,249,.6)':'rgba(251,77,109,.6)';
+    ctx.shadowBlur=animate?10+4*Math.sin(now/600):10;
+    ctx.strokeStyle=col; ctx.lineWidth=2; if(!state.polyValid)ctx.setLineDash([7,5]); ctx.stroke(); ctx.restore();
+    if(animate&&state.polyValid){ ctx.save(); ctx.strokeStyle='rgba(245,208,254,.8)'; ctx.lineWidth=1;
+      ctx.setLineDash([5,7]); ctx.lineDashOffset=-(now/45)%12; ctx.stroke(); ctx.restore(); }
+    // нормали
+    if(state.toggles.normals&&state.polyValid){
+      ctx.strokeStyle='#f0abfc'; ctx.fillStyle='#f0abfc'; ctx.lineWidth=1.6;
+      for(let i=0;i<state.polygon.length;i++){
+        const a=state.polygon[i], b=state.polygon[(i+1)%state.polygon.length];
+        const e=state.edges.find(e=>e.ax===a.x&&e.ay===a.y); if(!e)continue;
+        const len=Math.hypot(e.nx,e.ny)||1, nx=e.nx/len, ny=e.ny/len;
+        const m=toPx((a.x+b.x)/2,(a.y+b.y)/2), tip={x:m.x+nx*26,y:m.y-ny*26};
+        ctx.beginPath(); ctx.moveTo(m.x,m.y); ctx.lineTo(tip.x,tip.y); ctx.stroke();
+        const ang=Math.atan2(tip.y-m.y,tip.x-m.x);
+        ctx.beginPath(); ctx.moveTo(tip.x,tip.y);
+        ctx.lineTo(tip.x-7*Math.cos(ang-.4),tip.y-7*Math.sin(ang-.4));
+        ctx.lineTo(tip.x-7*Math.cos(ang+.4),tip.y-7*Math.sin(ang+.4)); ctx.fill();
+      }
+    }
+    state.polygon.forEach((p,i)=>{
+      const q=toPx(p.x,p.y);
+      ctx.fillStyle='#0a0f22'; ctx.strokeStyle=col; ctx.lineWidth=1.6;
+      ctx.beginPath(); ctx.arc(q.x,q.y,4.5,0,7); ctx.fill(); ctx.stroke();
+      if(state.toggles.labels){ ctx.font='600 10px JetBrains Mono,monospace'; ctx.fillStyle='rgba(240,171,252,.9)'; ctx.textAlign='left'; ctx.fillText(`V${i+1}`,q.x+8,q.y-6); }
+    });
+  }
+
+  /* исходные отрезки */
+  if(state.toggles.orig){
+    ctx.strokeStyle='#ffb020'; ctx.lineWidth=state.lineWidth; ctx.lineCap='round';
+    state.segments.forEach((s,i)=>{
+      const a=toPx(s.x1,s.y1), b=toPx(s.x2,s.y2);
+      const hot=hover&&hover.type==='seg'&&hover.i===i || drag&&drag.segIdx===i;
+      ctx.save(); if(hot){ ctx.shadowColor='rgba(255,176,32,.8)'; ctx.shadowBlur=9; }
+      ctx.globalAlpha=hot?1:.88;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); ctx.restore();
+      for(const p of [a,b]){
+        ctx.fillStyle=hot?'#ffd166':'#0a0f22'; ctx.strokeStyle='#ffb020'; ctx.lineWidth=1.4;
+        ctx.beginPath(); ctx.arc(p.x,p.y,hot?4.5:3,0,7); ctx.fill(); ctx.stroke();
+      }
+      if(state.toggles.labels){ ctx.font='600 10px JetBrains Mono,monospace'; ctx.fillStyle='rgba(255,176,32,.85)';
+        ctx.textAlign='left'; ctx.fillText(`S${i+1}`,(a.x+b.x)/2+7,(a.y+b.y)/2-6); }
+    });
+  }
+
+  /* видимые части */
+  ctx.lineCap='round';
+  const ra=revealAnim;
+  let animDone=true;
+  state.visible.forEach((s,i)=>{
+    let p=1;
+    if(ra){ p=clamp((now-ra.t0-i*ra.stagger)/ra.dur,0,1); if(p<1)animDone=false; if(p<=0)return; }
+    const a=toPx(s.x1,s.y1), b=toPx(s.x2,s.y2);
+    const deg=Math.hypot(b.x-a.x,b.y-a.y)<1.5;
+    ctx.save(); ctx.shadowColor='rgba(34,211,238,.85)'; ctx.shadowBlur=11;
+    ctx.strokeStyle='#22d3ee'; ctx.lineWidth=state.lineWidth+1.6;
+    if(deg){ ctx.fillStyle='#22d3ee'; ctx.beginPath(); ctx.arc(a.x,a.y,4*p,0,7); ctx.fill();
+      ctx.strokeStyle='rgba(34,211,238,.5)'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.arc(a.x,a.y,7*p,0,7); ctx.stroke(); }
+    else{
+      const ex=a.x+(b.x-a.x)*p, ey=a.y+(b.y-a.y)*p;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(ex,ey); ctx.stroke();
+      if(p<1){ ctx.fillStyle='#a5f3fc'; ctx.beginPath(); ctx.arc(ex,ey,3.4,0,7); ctx.fill(); }
+    }
+    ctx.restore();
+  });
+  if(ra&&animDone) revealAnim=null;
+
+  /* прицел при перетаскивании конца */
+  if(drag&&(drag.type==='seg-end'||drag.type==='vtx'||drag.type==='corner')){
+    const p=drag.px;
+    if(p){ ctx.save(); ctx.strokeStyle='rgba(34,211,238,.3)'; ctx.lineWidth=1; ctx.setLineDash([4,5]);
+      ctx.beginPath(); ctx.moveTo(0,p.y); ctx.lineTo(cssW,p.y); ctx.moveTo(p.x,0); ctx.lineTo(p.x,cssH); ctx.stroke(); ctx.restore(); }
+  }
+  /* подсветка ручки под курсором */
+  if(hover&&hover.px&&!drag){
+    ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(hover.px.x,hover.px.y,8,0,7); ctx.stroke();
+  }
+}
+
+/* ---------- цикл кадров ---------- */
+let geoVisible=true;
+function frame(now){
+  if(geoVisible&&(dirty||revealAnim||(state.toggles.anim&&!RM)||drag)){ draw(now); dirty=false; }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- hit-test и мышь ---------- */
+function distToSegPx(p,a,b){
+  const dx=b.x-a.x, dy=b.y-a.y, L2=dx*dx+dy*dy;
+  if(L2<1e-9) return Math.hypot(p.x-a.x,p.y-a.y);
+  const t=clamp(((p.x-a.x)*dx+(p.y-a.y)*dy)/L2,0,1);
+  return Math.hypot(p.x-(a.x+t*dx), p.y-(a.y+t*dy));
+}
+function hitTest(px){
+  const P={x:px.x,y:px.y};
+  for(let i=state.segments.length-1;i>=0;i--){
+    const s=state.segments[i], a=toPx(s.x1,s.y1), b=toPx(s.x2,s.y2);
+    if(Math.hypot(P.x-a.x,P.y-a.y)<9) return {type:'seg-end',i,end:1,px:a,segIdx:i};
+    if(Math.hypot(P.x-b.x,P.y-b.y)<9) return {type:'seg-end',i,end:2,px:b,segIdx:i};
+  }
+  if(state.mode===1){
+    const cs=[[state.win.xmin,state.win.ymin],[state.win.xmax,state.win.ymin],[state.win.xmax,state.win.ymax],[state.win.xmin,state.win.ymax]];
+    for(let k=0;k<4;k++){ const q=toPx(cs[k][0],cs[k][1]);
+      if(Math.hypot(P.x-q.x,P.y-q.y)<9) return {type:'corner',k,px:q}; }
+  } else {
+    for(let i=0;i<state.polygon.length;i++){ const q=toPx(state.polygon[i].x,state.polygon[i].y);
+      if(Math.hypot(P.x-q.x,P.y-q.y)<9) return {type:'vtx',i,px:q}; }
+  }
+  for(let i=state.segments.length-1;i>=0;i--){
+    const s=state.segments[i];
+    if(distToSegPx(P,toPx(s.x1,s.y1),toPx(s.x2,s.y2))<6) return {type:'seg',i,segIdx:i};
+  }
+  const w=toWorld(px.x,px.y);
+  if(state.mode===1){
+    if(w.x>state.win.xmin&&w.x<state.win.xmax&&w.y>state.win.ymin&&w.y<state.win.ymax) return {type:'win'};
+  } else if(state.polygon.length>=3&&pointInPoly(w,state.polygon)) return {type:'poly'};
+  return {type:'pan'};
+}
+function cursorFor(h){
+  if(!h) return 'crosshair';
+  switch(h.type){
+    case 'seg-end': case 'vtx': return 'grab';
+    case 'corner': return (h.k===0||h.k===2)?'nwse-resize':'nesw-resize';
+    case 'seg': case 'win': case 'poly': return 'move';
+    default: return 'crosshair';
+  }
+}
+function snapVal(v,e){ return (state.toggles.snap&&!e.shiftKey)?Math.round(v/gridStep())*gridStep():v; }
+let lastTick=0;
+function tickThrottled(){ const n=performance.now(); if(n-lastTick>70){ Sound.tick(); lastTick=n; } }
+
+function evPos(e){ const r=cv.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+
+cv.addEventListener('pointerdown',e=>{
+  if(e.button!==0) return;
+  Sound.unlock();
+  const px=evPos(e), h=hitTest(px), w=toWorld(px.x,px.y);
+  cv.setPointerCapture(e.pointerId);
+  if(h.type==='pan'){ drag={type:'pan',startPx:px,pan0:{x:state.view.panX,y:state.view.panY}}; cv.style.cursor='grabbing'; return; }
+  pushUndo();
+  if(h.type==='seg-end') drag={type:'seg-end',i:h.i,end:h.end,segIdx:h.i,px};
+  else if(h.type==='seg') drag={type:'seg',i:h.i,segIdx:h.i,startW:w,orig:{...state.segments[h.i]},px};
+  else if(h.type==='corner') drag={type:'corner',k:h.k,px};
+  else if(h.type==='vtx') drag={type:'vtx',i:h.i,px};
+  else if(h.type==='win') drag={type:'win',startW:w,orig:{...state.win},px};
+  else if(h.type==='poly') drag={type:'poly',startW:w,orig:state.polygon.map(p=>({...p})),px};
+  cv.style.cursor='grabbing'; dirty=true;
+});
+cv.addEventListener('pointermove',e=>{
+  const px=evPos(e), w=toWorld(px.x,px.y);
+  $('coordChip').textContent=`x: ${w.x.toFixed(1)} · y: ${w.y.toFixed(1)}`;
+  if(!drag){
+    const h=hitTest(px);
+    const changed=JSON.stringify(h&&{t:h.type,i:h.i,k:h.k,e:h.end})!==JSON.stringify(hover&&{t:hover.type,i:hover.i,k:hover.k,e:hover.end});
+    hover=h; cv.style.cursor=cursorFor(h); if(changed)dirty=true;
+    return;
+  }
+  drag.px=px;
+  const step=gridStep();
+  const snapDelta=(d)=> (state.toggles.snap&&!e.shiftKey)?Math.round(d/step)*step:d;
+  let geoChanged=true;
+  switch(drag.type){
+    case 'pan':
+      state.view.panX=drag.pan0.x+(px.x-drag.startPx.x);
+      state.view.panY=drag.pan0.y+(px.y-drag.startPx.y);
+      geoChanged=false; break;
+    case 'seg-end':{
+      const s=state.segments[drag.i];
+      const nx=snapVal(w.x,e), ny=snapVal(w.y,e);
+      const old=drag.end===1?[s.x1,s.y1]:[s.x2,s.y2];
+      if(nx!==old[0]||ny!==old[1]) tickThrottled();
+      if(drag.end===1){s.x1=nx;s.y1=ny;}else{s.x2=nx;s.y2=ny;}
+      break;}
+    case 'seg':{
+      const dx=snapDelta(w.x-drag.startW.x), dy=snapDelta(w.y-drag.startW.y), o=drag.orig, s=state.segments[drag.i];
+      s.x1=o.x1+dx; s.y1=o.y1+dy; s.x2=o.x2+dx; s.y2=o.y2+dy; break;}
+    case 'corner':{
+      const nx=snapVal(w.x,e), ny=snapVal(w.y,e), win=state.win, gap=step;
+      if(drag.k===0){win.xmin=Math.min(nx,win.xmax-gap);win.ymin=Math.min(ny,win.ymax-gap);}
+      if(drag.k===1){win.xmax=Math.max(nx,win.xmin+gap);win.ymin=Math.min(ny,win.ymax-gap);}
+      if(drag.k===2){win.xmax=Math.max(nx,win.xmin+gap);win.ymax=Math.max(ny,win.ymin+gap);}
+      if(drag.k===3){win.xmin=Math.min(nx,win.xmax-gap);win.ymax=Math.max(ny,win.ymin+gap);}
+      break;}
+    case 'vtx':{
+      const p=state.polygon[drag.i];
+      p.x=snapVal(w.x,e); p.y=snapVal(w.y,e);
+      const wasValid=state.polyValid; rebuildPolygon();
+      if(wasValid&&!state.polyValid) toast(state.polyReason,'warn',2600);
+      break;}
+    case 'win':{
+      const dx=snapDelta(w.x-drag.startW.x), dy=snapDelta(w.y-drag.startW.y), o=drag.orig;
+      state.win={xmin:o.xmin+dx,ymin:o.ymin+dy,xmax:o.xmax+dx,ymax:o.ymax+dy}; break;}
+    case 'poly':{
+      const dx=snapDelta(w.x-drag.startW.x), dy=snapDelta(w.y-drag.startW.y);
+      state.polygon=drag.orig.map(p=>({x:p.x+dx,y:p.y+dy})); rebuildPolygon(); break;}
+  }
+  if(geoChanged){ reclip(); markStale(); syncInputs(); }
+  dirty=true;
+});
+function endDrag(e){
+  if(!drag) return;
+  if(drag.type!=='pan') persist();
+  drag=null; cv.style.cursor=cursorFor(hover); dirty=true;
+  try{ cv.releasePointerCapture(e.pointerId); }catch(err){}
+}
+cv.addEventListener('pointerup',endDrag);
+cv.addEventListener('pointercancel',endDrag);
+cv.addEventListener('pointerleave',()=>{ if(!drag){ hover=null; $('coordChip').textContent='x: — · y: —'; dirty=true; } });
+cv.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const px=evPos(e);
+  setScale(state.view.scale*Math.exp(-e.deltaY*0.0014),px);
+},{passive:false});
+cv.addEventListener('dblclick',e=>{
+  const px=evPos(e); if(hitTest(px).type!=='pan') return;
+  const w=toWorld(px.x,px.y), step=gridStep();
+  const cx=state.toggles.snap?Math.round(w.x/step)*step:w.x, cy=state.toggles.snap?Math.round(w.y/step)*step:w.y;
+  const L=step*4;
+  pushUndo(); state.segments.push({x1:+(cx-L).toFixed(2),y1:+(cy-L*.6).toFixed(2),x2:+(cx+L).toFixed(2),y2:+(cy+L*.6).toFixed(2)});
+  syncInputs(); reclip(); markStale(); persist(); Sound.click();
+  toast('Отрезок добавлен. ПКМ — удалить, Ctrl+Z — отменить.','info',2400);
+});
+cv.addEventListener('contextmenu',e=>{
+  e.preventDefault();
+  const px=evPos(e), h=hitTest(px);
+  if(h.type==='seg'||h.type==='seg-end'){
+    pushUndo(); state.segments.splice(h.i,1);
+    syncInputs(); reclip(); markStale(); persist(); dirty=true;
+    toast('Отрезок удалён · Ctrl+Z — вернуть','warn',2600); Sound.click();
+  } else if(h.type==='vtx'){
+    if(state.polygon.length<=3){ toast('Нельзя удалить: у отсекателя должно остаться ≥ 3 вершин.','error'); return; }
+    pushUndo(); state.polygon.splice(h.i,1); rebuildPolygon();
+    syncInputs(); reclip(); markStale(); persist(); dirty=true;
+    toast('Вершина удалена · Ctrl+Z — вернуть','warn',2600); Sound.click();
+  }
+});
+
+/* ============================================================
+   СРАВНЕНИЕ МЕТОДОВ
+   ============================================================ */
+function compare(silent){
+  const rect=rectPoly(state.win), rEdges=buildEdges(rect).edges;
+  const opsA={m:0,d:0}, opsB={m:0,d:0};
+  let t=performance.now();
+  const resA=state.segments.map(s=>clipSC(s,state.win,opsA)); const tA=performance.now()-t;
+  t=performance.now();
+  const resB=state.segments.map(s=>clipCB(s,rEdges,opsB)); const tB=performance.now()-t;
+  const ver=state.segments.map(s=>verifyClip(s,rect));
+  let okA=0,okB=0; const diffs=[];
+  state.segments.forEach((s,i)=>{
+    const a=segEq(resA[i],ver[i]), b=segEq(resB[i],ver[i]);
+    if(a)okA++; if(b)okB++;
+    if(!a||!b) diffs.push(`S${i+1}: ожидалось ${segFmt(ver[i])}\n  СК: ${segFmt(resA[i])}${a?' ✓':' ✗'}\n  КБ: ${segFmt(resB[i])}${b?' ✓':' ✗'}`);
+  });
+  const n=state.segments.length;
+  const visA=resA.filter(Boolean).length, visB=resB.filter(Boolean).length;
+  const pill=(ok)=>n===0?'<span class="pill na">—</span>':
+    ok===n?`<span class="pill ok">✓ ${ok}/${n}</span>`:`<span class="pill bad">✗ ${n-ok} расхожд.</span>`;
+  $('cmpBody').innerHTML=`
+    <tr><td><span class="m-dot" style="background:var(--cyan)"></span><b>Сазерленд–Коэн</b> <span style="color:var(--muted2);font-size:11px">явное уравнение</span></td>
+      <td class="num">${tA.toFixed(3)}</td><td class="num">${visA}</td><td class="num">${fInt(opsA.m)}</td><td class="num">${fInt(opsA.d)}</td><td>${pill(okA)}</td></tr>
+    <tr><td><span class="m-dot" style="background:var(--magenta)"></span><b>Кирус–Бек</b> <span style="color:var(--muted2);font-size:11px">по прямоугольнику окна</span></td>
+      <td class="num">${tB.toFixed(3)}</td><td class="num">${visB}</td><td class="num">${fInt(opsB.m)}</td><td class="num">${fInt(opsB.d)}</td><td>${pill(okB)}</td></tr>`;
+  const det=$('cmpDetails');
+  if(diffs.length){ det.style.display=''; $('cmpDiff').textContent=diffs.join('\n\n'); }
+  else det.style.display='none';
+  state.compareStale=false; $('cmpStale').classList.remove('show');
+  if(!silent){
+    if(okA===n&&okB===n){ toast(`Методы совпали с независимой проверкой: ${n}/${n} ✓`,'success'); Sound.clip(); }
+    else { toast(`Обнаружены расхождения: ${diffs.length}. Подробности под таблицей.`,'error'); }
+  }
+}
+
+/* ============================================================
+   ФАЙЛЫ: загрузка / TXT / PNG
+   ============================================================ */
+function loadFileText(text){
+  const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l&&!l.startsWith('#'));
+  try{
+    if(!lines.length) throw 'Файл пуст.';
+    let li=0;
+    const n=parseInt(lines[li++],10);
+    if(!isFinite(n)||n<0||String(n)!==lines[0].split(/\s+/)[0]) throw 'Первая строка должна содержать число отрезков n.';
+    if(lines.length<li+n+1) throw `Не хватает строк: заявлено n=${n} отрезков + строка окна.`;
+    const segs=[];
+    for(let i=0;i<n;i++){
+      const c=parseNums(lines[li++]);
+      if(c.length!==4||c.some(v=>!isFinite(v))) throw `Строка отрезка ${i+1}: ожидалось 4 числа «X1 Y1 X2 Y2».`;
+      segs.push({x1:c[0],y1:c[1],x2:c[2],y2:c[3]});
+    }
+    const wc=parseNums(lines[li++]);
+    if(wc.length!==4||wc.some(v=>!isFinite(v))) throw 'Строка окна: ожидалось 4 числа «Xmin Ymin Xmax Ymax».';
+    let [xmin,ymin,xmax,ymax]=wc;
+    if(xmin>xmax)[xmin,xmax]=[xmax,xmin]; if(ymin>ymax)[ymin,ymax]=[ymax,ymin];
+    if(xmax-xmin<1e-6||ymax-ymin<1e-6) throw 'Окно вырождено: нужно Xmin < Xmax и Ymin < Ymax.';
+    let poly=null;
+    if(li<lines.length){
+      const first=parseNums(lines[li]);
+      let m=null;
+      if(first.length===1&&isFinite(first[0])){ m=first[0]; li++;
+        if(m<3) throw 'Число вершин отсекателя m должно быть ≥ 3.';
+        if(lines.length<li+m) throw `Не хватает строк вершин: заявлено m=${m}.`;
+      }
+      const rest=lines.slice(li);
+      const cnt=m!==null?m:rest.length;
+      const pp=[];
+      for(let i=0;i<cnt;i++){
+        const c=parseNums(rest[i]||'');
+        if(c.length!==2||c.some(v=>!isFinite(v))) throw `Вершина ${i+1}: ожидалось 2 числа «X Y».`;
+        pp.push({x:c[0],y:c[1]});
+      }
+      if(pp.length>=3) poly=pp;
+      else if(m!==null) throw 'Вершин отсекателя меньше трёх.';
+    }
+    pushUndo();
+    state.segments=segs; state.win={xmin,ymin,xmax,ymax};
+    if(poly){ state.polygon=poly; rebuildPolygon(); }
+    syncInputs(); reclip(); markStale(); fitView(); persist();
+    if(state.toggles.anim) revealAnim={t0:performance.now(),dur:state.animMs,stagger:Math.min(50,800/Math.max(1,segs.length))};
+    Sound.clip();
+    toast(`Файл загружен: ${segs.length} отрезков, окно [${f(xmin)}, ${f(ymin)} … ${f(xmax)}, ${f(ymax)}]${poly?`, отсекатель: ${poly.length} вершин`:''}`,'success',3200);
+  }catch(err){ toast('Ошибка файла: '+err,'error',4200); }
+}
+$('fileInput').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const rd=new FileReader();
+  rd.onload=()=>loadFileText(String(rd.result));
+  rd.onerror=()=>toast('Не удалось прочитать файл.','error');
+  rd.readAsText(file); e.target.value='';
+});
+function download(name,content,mime){
+  const blob=content instanceof Blob?content:new Blob([content],{type:mime});
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+$('btnTxt').addEventListener('click',()=>{
+  let txt=state.segments.length+'\n';
+  txt+=state.segments.map(s=>`${f(s.x1)} ${f(s.y1)} ${f(s.x2)} ${f(s.y2)}`).join('\n')+'\n';
+  txt+=`${f(state.win.xmin)} ${f(state.win.ymin)} ${f(state.win.xmax)} ${f(state.win.ymax)}\n`;
+  if(state.polygon.length>=3){ txt+=state.polygon.length+'\n'+state.polygon.map(p=>`${f(p.x)} ${f(p.y)}`).join('\n')+'\n'; }
+  download('cliplab_scene.txt',txt,'text/plain'); toast('TXT сохранён в формате лабораторной.','success',2200); Sound.click();
+});
+$('btnPng').addEventListener('click',()=>{
+  draw(performance.now());
+  cv.toBlob(b=>{ if(b){ download('cliplab_scene.png',b); toast('PNG сохранён.','success',2200); Sound.click(); } },'image/png');
+});
+
+/* ============================================================
+   БЕНЧМАРК
+   ============================================================ */
+let benchData=null, benchAnim=null;
+function runBench(){
+  const N=clamp(parseInt($('bN').value)||2000,100,50000);
+  const seed=clamp(parseInt($('bSeed').value)||42,1,99999);
+  const reps=parseInt($('bReps').value)||3;
+  const useRect=$('bRect').checked;
+  const btn=$('btnBench'); btn.disabled=true; btn.innerHTML='<svg><use href="#i-clock"/></svg>Считаю…';
+  setTimeout(()=>{
+    const rnd=mulberry32(seed), segs=[];
+    for(let i=0;i<N;i++) segs.push({x1:rnd()*96-48,y1:rnd()*96-48,x2:rnd()*96-48,y2:rnd()*96-48});
+    const poly=useRect?rectPoly(state.win):state.polygon;
+    const cbOK=useRect||state.polyValid;
+    const edges=cbOK?buildEdges(poly).edges:null;
+    const med=a=>{a.sort((x,y)=>x-y);return a[a.length>>1];};
+    const tA=[],tB=[]; let visA=0,visB=0;
+    for(let r=0;r<reps;r++){
+      let t=performance.now(),c=0;
+      for(const s of segs) if(clipSC(s,state.win,null))c++;
+      tA.push(performance.now()-t); visA=c;
+      if(cbOK){ t=performance.now(); c=0;
+        for(const s of segs) if(clipCB(s,edges,null))c++;
+        tB.push(performance.now()-t); visB=c; }
+    }
+    const opsA={m:0,d:0},opsB={m:0,d:0};
+    for(const s of segs) clipSC(s,state.win,opsA);
+    if(cbOK) for(const s of segs) clipCB(s,edges,opsB);
+    benchData={N,timeA:med(tA),timeB:cbOK?med(tB):null,visA,visB:cbOK?visB:null,opsA,opsB:cbOK?opsB:null,useRect,cbOK};
+    renderBench();
+    btn.disabled=false; btn.innerHTML='<svg><use href="#i-play"/></svg>Запустить';
+    Sound.clip();
+    toast(`Бенчмарк: ${fInt(N)} отрезков × ${reps} прогонов завершён`,'success',2600);
+  },40);
+}
+function renderBench(){
+  const d=benchData; if(!d) return;
+  const row=(name,color,time,vis,ops)=>`<tr><td><span class="m-dot" style="background:${color}"></span><b>${name}</b></td>
+    <td class="num">${time===null?'—':time.toFixed(2)}</td><td class="num">${vis===null?'—':fInt(vis)}</td>
+    <td class="num">${ops?fInt(ops.m):'—'}</td><td class="num">${ops?fInt(ops.d):'—'}</td></tr>`;
+  $('benchBody').innerHTML=row('Сазерленд–Коэн','var(--cyan)',d.timeA,d.visA,d.opsA)+row('Кирус–Бек','var(--magenta)',d.timeB,d.visB,d.opsB);
+  const chips=[];
+  if(d.timeB!==null){
+    const faster=d.timeA<=d.timeB?'СК':'КБ', ratio=(Math.max(d.timeA,d.timeB)/Math.max(1e-6,Math.min(d.timeA,d.timeB))).toFixed(1);
+    chips.push(`<span class="sum-chip ${d.timeA<=d.timeB?'cyan':'mag'}"><svg><use href="#i-zap"/></svg>${faster} быстрее в ${ratio}×</span>`);
+    chips.push(`<span class="sum-chip lime"><svg><use href="#i-eye"/></svg>Видимых: СК ${fInt(d.visA)} · КБ ${fInt(d.visB)}${d.useRect?(d.visA===d.visB?' · совпадает ✓':' · РАСХОЖДЕНИЕ ✗'):''}</span>`);
+  } else {
+    chips.push('<span class="sum-chip mag"><svg><use href="#i-warn"/></svg>КБ пропущен: отсекатель невыпуклый</span>');
+  }
+  chips.push(`<span class="sum-chip cyan"><svg><use href="#i-hash"/></svg>N = ${fInt(d.N)} · делений на отрезок: СК ${(d.opsA.d/d.N).toFixed(2)}${d.opsB?` · КБ ${(d.opsB.d/d.N).toFixed(2)}`:''}</span>`);
+  $('benchSummary').innerHTML=chips.join('');
+  // анимация диаграммы
+  if(benchAnim) cancelAnimationFrame(benchAnim);
+  const t0=performance.now(), dur=RM?1:600;
+  const step=now=>{ const p=clamp((now-t0)/dur,0,1); drawBenchChart(1-Math.pow(1-p,3)); if(p<1) benchAnim=requestAnimationFrame(step); else benchAnim=null; };
+  benchAnim=requestAnimationFrame(step);
+}
+function drawBenchChart(progress){
+  const c=$('benchChart'), r=c.getBoundingClientRect();
+  const dp=Math.min(2,window.devicePixelRatio||1);
+  c.width=Math.round(r.width*dp); c.height=Math.round(300*dp);
+  const g=c.getContext('2d'); g.setTransform(dp,0,0,dp,0,0);
+  g.fillStyle='#0a0f22'; g.fillRect(0,0,r.width,300);
+  const d=benchData; if(!d) return;
+  const groups=[
+    {title:'Время, мс', vals:[d.timeA||0,d.timeB||0], fmt:v=>v.toFixed(2)},
+    {title:'Умножения', vals:[d.opsA.m,d.opsB?d.opsB.m:0], fmt:v=>fInt(Math.round(v))},
+    {title:'Деления', vals:[d.opsA.d,d.opsB?d.opsB.d:0], fmt:v=>fInt(Math.round(v))}
+  ];
+  const colors=[['#22d3ee','#e879f9'],['#6366f1','#a78bfa'],['#ffb020','#a3e635']];
+  const tags=['СК','КБ'];
+  const pad=18, top=34, bottom=44, gw=(r.width-pad*2)/3;
+  g.font='700 11px Manrope,sans-serif'; g.textAlign='center';
+  groups.forEach((gr,gi)=>{
+    const x0=pad+gi*gw, max=Math.max(...gr.vals,1e-9);
+    g.fillStyle='rgba(139,147,184,.9)'; g.fillText(gr.title,x0+gw/2,20);
+    g.strokeStyle='rgba(148,163,255,.12)'; g.lineWidth=1;
+    for(let k=1;k<=3;k++){ const y=top+(300-top-bottom)*k/3; g.beginPath(); g.moveTo(x0+10,y); g.lineTo(x0+gw-10,y); g.stroke(); }
+    const bw=Math.min(64,gw/3.2), gap=bw*.55, base=300-bottom;
+    gr.vals.forEach((v,vi)=>{
+      const h=(300-top-bottom)*(v/max)*progress;
+      const bx=x0+gw/2+(vi===0?-bw-gap/2:gap/2), by=base-h;
+      const grad=g.createLinearGradient(0,by,0,base);
+      grad.addColorStop(0,colors[gi][vi]); grad.addColorStop(1,colors[gi][vi]+'33');
+      g.fillStyle=grad;
+      g.beginPath();
+      const rr=Math.min(6,h/2);
+      g.moveTo(bx,base); g.lineTo(bx,by+rr); g.quadraticCurveTo(bx,by,bx+rr,by);
+      g.lineTo(bx+bw-rr,by); g.quadraticCurveTo(bx+bw,by,bx+bw,by+rr); g.lineTo(bx+bw,base); g.closePath(); g.fill();
+      g.fillStyle=colors[gi][vi]; g.font='700 11px JetBrains Mono,monospace';
+      g.fillText(gr.fmt(v),bx+bw/2,by-7);
+      g.fillStyle='rgba(139,147,184,.85)'; g.font='600 10px Manrope,sans-serif';
+      g.fillText(tags[vi],bx+bw/2,base+16);
+    });
+    g.strokeStyle='rgba(148,163,255,.3)'; g.beginPath(); g.moveTo(x0+8,base); g.lineTo(x0+gw-8,base); g.stroke();
+  });
+  g.fillStyle='rgba(92,100,136,.9)'; g.font='600 10px Manrope,sans-serif'; g.textAlign='right';
+  g.fillText(`воспроизводимо · зерно ${$('bSeed').value} · медиана ${$('bReps').value} прогонов`,r.width-14,292);
+}
+
+/* ============================================================
+   ПРОВЕРКИ (23 теста)
+   ============================================================ */
+function runChecks(){
+  const W={xmin:-10,ymin:-10,xmax:10,ymax:10};
+  const sq=[{x:0,y:0},{x:10,y:0},{x:10,y:10},{x:0,y:10}];
+  const sqCW=[...sq].reverse();
+  const tri=[{x:0,y:0},{x:10,y:0},{x:5,y:10}];
+  const E=sq.map(p=>({...p})), ECW=buildEdges(sqCW).edges, ET=buildEdges(tri).edges, ES=buildEdges(sq).edges;
+  const S=(a,b,c,d)=>({x1:a,y1:b,x2:c,y2:d});
+  const R=(a,b,c,d)=>({x1:a,y1:b,x2:c,y2:d});
+  const t=(name,fn)=>({name,fn});
+  const expectSC=(s,exp)=>{ const got=clipSC(s,W,null); return {ok:segEq(got,exp,1e-7),exp:segFmt(exp),got:segFmt(got)}; };
+  const expectCB=(s,edges,exp)=>{ const got=clipCB(s,edges,null); return {ok:segEq(got,exp,1e-7),exp:segFmt(exp),got:segFmt(got)}; };
+  const tests=[
+    t('СК · целиком внутри окна',()=>expectSC(S(-5,-5,5,5),R(-5,-5,5,5))),
+    t('СК · тривиальное отклонение (оба слева)',()=>expectSC(S(-30,-5,-20,5),null)),
+    t('СК · тривиальное отклонение (угол слева-сверху)',()=>expectSC(S(-30,20,-20,30),null)),
+    t('СК · нетривиальное отклонение (прямая мимо угла)',()=>expectSC(S(-30,-5,-5,-30),null)),
+    t('СК · горизонтальный, обе вертикальные границы',()=>expectSC(S(-30,0,30,0),R(-10,0,10,0))),
+    t('СК · вертикальный, обе горизонтальные границы',()=>expectSC(S(0,-30,0,30),R(0,-10,0,10))),
+    t('СК · диагональ через два угла окна',()=>expectSC(S(-30,-30,30,30),R(-10,-10,10,10))),
+    t('СК · касание угла → вырожденная точка',()=>expectSC(S(-30,10,10,-30),R(-10,-10,-10,-10))),
+    t('СК · отрезок лежит на нижней границе',()=>expectSC(S(-10,-10,10,-10),R(-10,-10,10,-10))),
+    t('СК · конец точно на границе',()=>expectSC(S(-10,0,30,0),R(-10,0,10,0))),
+    t('СК · вырожденный отрезок-точка внутри',()=>expectSC(S(3,4,3,4),R(3,4,3,4))),
+    t('СК · вырожденный отрезок-точка снаружи',()=>expectSC(S(30,4,30,4),null)),
+    t('СК · один конец внутри, другой снаружи',()=>expectSC(S(-5,0,30,0),R(-5,0,10,0))),
+    t('КБ · квадрат, обход против часовой',()=>expectCB(S(-5,5,15,5),ES,R(0,5,10,5))),
+    t('КБ · тот же квадрат, обход по часовой',()=>expectCB(S(-5,5,15,5),ECW,R(0,5,10,5))),
+    t('КБ · вход точно через вершину треугольника',()=>expectCB(S(5,20,5,-10),ET,R(5,10,5,0))),
+    t('КБ · параллелен ребру и снаружи',()=>expectCB(S(-5,-2,15,-2),ES,null)),
+    t('КБ · лежит на ребре (граница = внутри)',()=>expectCB(S(-5,0,15,0),ES,R(0,0,10,0))),
+    t('КБ · вырожденная точка внутри',()=>expectCB(S(5,5,5,5),ES,R(5,5,5,5))),
+    t('КБ · невыпуклый контур отклоняется',()=>{
+      const bad=[{x:0,y:0},{x:10,y:0},{x:4,y:4},{x:10,y:10},{x:0,y:10}];
+      const r=buildEdges(bad);
+      return {ok:!r.valid,exp:'невыпуклый → отказ',got:r.valid?'принят ✗':'отказ ✓'};
+    }),
+    t('КБ · диагональ через две вершины квадрата',()=>expectCB(S(-5,15,15,-5),ES,R(0,10,10,0))),
+    t('Свойство · СК ≡ КБ(прямоугольник), 200 случайных',()=>{
+      const rnd=mulberry32(777), edges=buildEdges(rectPoly(W)).edges; let bad=0;
+      for(let i=0;i<200;i++){
+        const s={x1:Math.round(rnd()*40-20),y1:Math.round(rnd()*40-20),x2:Math.round(rnd()*40-20),y2:Math.round(rnd()*40-20)};
+        if(!segEq(clipSC(s,W,null),clipCB(s,edges,null),1e-6)) bad++;
+      }
+      return {ok:bad===0,exp:'200/200 совпадений',got:`${200-bad}/200 совпадений`};
+    }),
+    t('Свойство · СК ≡ независимая проверка, 100 случайных',()=>{
+      const rnd=mulberry32(1234), poly=rectPoly(W); let bad=0;
+      for(let i=0;i<100;i++){
+        const s={x1:Math.round(rnd()*44-22),y1:Math.round(rnd()*44-22),x2:Math.round(rnd()*44-22),y2:Math.round(rnd()*44-22)};
+        if(!segEq(clipSC(s,W,null),verifyClip(s,poly),1e-6)) bad++;
+      }
+      return {ok:bad===0,exp:'100/100 совпадений',got:`${100-bad}/100 совпадений`};
+    })
+  ];
+  const list=$('checksList'); list.innerHTML='';
+  const btn=$('btnChecks'); btn.disabled=true;
+  const summary=$('checksSummary'); summary.className='pill na'; summary.textContent='выполняется…';
+  let pass=0;
+  tests.forEach((test,i)=>{
+    const t0=performance.now(); let res;
+    try{ res=test.fn(); }catch(err){ res={ok:false,exp:'без исключения',got:'исключение: '+err}; }
+    const us=((performance.now()-t0)*1000).toFixed(0);
+    if(res.ok)pass++;
+    const row=document.createElement('div');
+    row.className='check-row '+(res.ok?'pass':'fail');
+    row.innerHTML=`<span class="st"><svg><use href="#${res.ok?'i-check':'i-x'}"/></svg></span>
+      <span class="nm"></span>
+      <span class="dt"><b>ожидалось:</b> <span class="e"></span><br><b>получено:</b> <span class="g"></span> · ${us} мкс</span>`;
+    row.querySelector('.nm').textContent=test.name;
+    row.querySelector('.e').textContent=res.exp;
+    row.querySelector('.g').textContent=res.got;
+    list.appendChild(row);
+    setTimeout(()=>row.classList.add('in'),RM?0:60+i*45);
+    $('checksBar').style.width=((i+1)/tests.length*100)+'%';
+  });
+  setTimeout(()=>{
+    const all=pass===tests.length;
+    summary.className='pill '+(all?'ok':'bad');
+    summary.textContent=all?`✓ все ${tests.length} проверок пройдены`:`✗ ${tests.length-pass} из ${tests.length} провалены`;
+    btn.disabled=false;
+    if(all)Sound.pass(); else Sound.error();
+    toast(all?'Все алгоритмы прошли проверки ✓':'Есть проваленные проверки — смотрите список',all?'success':'error');
+  },RM?60:60+tests.length*45);
+}
+
+/* ============================================================
+   ПРИВЯЗКА СОБЫТИЙ / ИНИЦИАЛИЗАЦИЯ
+   ============================================================ */
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    const on=b.dataset.tab===name; b.classList.toggle('active',on); b.setAttribute('aria-selected',on);
+  });
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));
+  geoVisible=name==='geometry';
+  if(geoVisible){ resize(); dirty=true; }
+  if(name==='bench'&&benchData) renderBench();
+  Sound.click();
+}
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+document.querySelectorAll('#modeSeg button').forEach(b=>b.addEventListener('click',()=>setMode(+b.dataset.mode)));
+document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>applyPreset(b.dataset.preset)));
+$('btnApplySeg').addEventListener('click',applySegText);
+$('btnApplyWin').addEventListener('click',applyWinText);
+$('btnApplyPoly').addEventListener('click',applyPolyText);
+$('btnRandom').addEventListener('click',randomSegments);
+$('btnClip').addEventListener('click',replayClip);
+$('btnCompare').addEventListener('click',()=>compare(false));
+$('btnCompare2').addEventListener('click',()=>compare(false));
+$('btnLoad').addEventListener('click',()=>$('fileInput').click());
+$('polyPreset').addEventListener('change',e=>loadPolyPreset(e.target.value));
+$('btnFit').addEventListener('click',()=>{fitView();Sound.click();});
+$('btnReset').addEventListener('click',()=>{
+  pushUndo();
+  state.win={xmin:-40,ymin:-40,xmax:40,ymax:40};
+  state.polygon=POLY_PRESETS.rhomb.map(p=>({...p}));
+  rebuildPolygon();
+  state.segments=makePreset('cross')||[];
+  syncInputs(); reclip(); markStale(); fitView(); persist();
+  try{localStorage.removeItem('cliplab10_scene');}catch(e){}
+  Sound.click(); toast('Сцена сброшена к демонстрационному набору.','info',2400);
+});
+$('btnUndo').addEventListener('click',undo);
+$('scaleRange').addEventListener('input',e=>setScale(parseFloat(e.target.value)));
+$('scaleMinus').addEventListener('click',()=>setScale(state.view.scale-1));
+$('scalePlus').addEventListener('click',()=>setScale(state.view.scale+1));
+$('widthRange').addEventListener('input',e=>{state.lineWidth=parseFloat(e.target.value);$('widthVal').textContent=f(state.lineWidth);paintRange(e.target);dirty=true;});
+$('speedRange').addEventListener('input',e=>{state.animMs=parseInt(e.target.value);$('speedVal').textContent=state.animMs;paintRange(e.target);});
+const tgMap={tgGrid:'grid',tgAxes:'axes',tgOrig:'orig',tgLabels:'labels',tgNormals:'normals',tgAnim:'anim',tgSnap:'snap'};
+for(const id in tgMap){
+  $(id).checked=state.toggles[tgMap[id]];
+  $(id).addEventListener('change',e=>{state.toggles[tgMap[id]]=e.target.checked;dirty=true;Sound.click();});
+}
+$('btnBench').addEventListener('click',runBench);
+$('btnChecks').addEventListener('click',runChecks);
+/* звук */
+function renderSound(){
+  const b=$('btnSound');
+  b.classList.toggle('on',Sound.on); b.classList.toggle('off',!Sound.on);
+  b.title='Звук: '+(Sound.on?'вкл':'выкл'); b.setAttribute('aria-pressed',Sound.on);
+  b.innerHTML=`<svg><use href="#${Sound.on?'i-snd':'i-mute'}"/></svg>`;
+}
+$('btnSound').addEventListener('click',()=>{
+  Sound.unlock(); Sound.on=!Sound.on; renderSound();
+  try{localStorage.setItem('cliplab10_sound',Sound.on?'1':'0');}catch(e){}
+  if(Sound.on)Sound.click();
+  toast(Sound.on?'Звук включён':'Звук выключен','info',1500);
+});
+document.addEventListener('pointerdown',()=>Sound.unlock(),{once:true});
+/* справка */
+function openHelp(){ $('helpModal').classList.add('open'); $('btnCloseHelp').focus(); }
+function closeHelp(){ $('helpModal').classList.remove('open'); $('btnHelp').focus(); }
+$('btnHelp').addEventListener('click',openHelp);
+$('footHelp').addEventListener('click',openHelp);
+$('btnCloseHelp').addEventListener('click',closeHelp);
+$('helpModal').addEventListener('click',e=>{ if(e.target===$('helpModal'))closeHelp(); });
+/* клавиатура */
+document.addEventListener('keydown',e=>{
+  const typing=/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+  if(e.key==='Escape'){ closeHelp(); return; }
+  if(typing) return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){ e.preventDefault(); undo(); return; }
+  switch(e.key){
+    case ' ': e.preventDefault(); if(geoVisible)replayClip(); break;
+    case '1': setMode(1); break;
+    case '2': setMode(2); break;
+    case '?': openHelp(); break;
+    case 'f': case 'F': case 'а': case 'А': fitView(); break;
+    case 'g': case 'G': case 'п': case 'П': $('tgGrid').click(); break;
+    case 'a': case 'A': case 'ф': case 'Ф': $('tgAxes').click(); break;
+    case 'o': case 'O': case 'щ': case 'Щ': $('tgOrig').click(); break;
+    case 'l': case 'L': case 'д': case 'Д': $('tgLabels').click(); break;
+    case 'n': case 'N': case 'т': case 'Т': if(state.mode===2)$('tgNormals').click(); break;
+  }
+});
+/* размеры */
+new ResizeObserver(()=>{ resize(); if(benchData&&$('panel-bench').classList.contains('active'))drawBenchChart(1); }).observe(stage);
+window.addEventListener('resize',()=>{ resize(); if(benchData&&$('panel-bench').classList.contains('active'))drawBenchChart(1); });
+
+/* ---------- стартовая сцена ---------- */
+function init(){
+  renderSound();
+  ['scaleRange','widthRange','speedRange'].forEach(id=>paintRange($(id)));
+  state.polygon=POLY_PRESETS.rhomb.map(p=>({...p}));
+  let restored=false;
+  try{
+    const raw=localStorage.getItem('cliplab10_scene');
+    if(raw){
+      const s=JSON.parse(raw);
+      if(s&&s.v===1&&Array.isArray(s.segments)&&s.win&&Array.isArray(s.polygon)){
+        state.segments=s.segments; state.win=s.win; state.polygon=s.polygon;
+        if(s.mode===2){ state.mode=2;
+          document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('active',+b.dataset.mode===2));
+          $('winGroup').style.display='none'; $('polyGroup').style.display='';
+          $('rowNormals').style.display=''; $('hudMode').textContent='Кирус–Бек';
+          $('legClipName').textContent='Многоугольник'; $('legClipBar').style.background='var(--magenta)';
+        }
+        restored=true;
+      }
+    }
+  }catch(e){}
+  rebuildPolygon();
+  if(!restored) state.segments=makePreset('cross')||[];
+  syncInputs(); resize(); reclip(); fitView();
+  compare(true);
+  if(state.toggles.anim&&state.visible.length) revealAnim={t0:performance.now()+250,dur:state.animMs,stagger:55};
+  requestAnimationFrame(frame);
+}
+init();
+</script>
+</body>
+</html>
