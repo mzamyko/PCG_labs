@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Ze-Lab 3D — буква «З» · ЛР №6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070b18;--s1:#0d1428;--s2:#121b36;--s3:#182348;--line:rgba(148,163,255,.14);--line2:rgba(148,163,255,.26);
+--ink:#e9edff;--mut:#8b93b8;--mut2:#5c6488;--blue:#6366f1;--cyan:#22d3ee;--amber:#ffb020;--red:#fb4d6d;--green:#34d399;
+--grad:linear-gradient(135deg,#6366f1,#3b82f6);--fd:'Unbounded',system-ui,sans-serif;--fb:'Manrope',system-ui,sans-serif;
+--fm:'JetBrains Mono',ui-monospace,Consolas,monospace;--hh:64px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font:15px/1.5 var(--fb);background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-3;background:radial-gradient(1100px 700px at 12% -10%,rgba(99,102,241,.22),transparent 60%),radial-gradient(900px 600px at 105% 110%,rgba(34,211,238,.14),transparent 60%),var(--bg)}
+.bg-grid{position:fixed;inset:0;z-index:-2;opacity:.5;pointer-events:none;background:radial-gradient(circle,rgba(148,163,255,.09) 1px,transparent 1.4px) 0 0/30px 30px}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+*{scrollbar-width:thin;scrollbar-color:#3b4370 #0b1124}
+header{position:fixed;top:0;left:0;right:0;height:var(--hh);z-index:50;display:flex;align-items:center;gap:16px;padding:0 22px;background:#0a0f20;border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:11px}
+.mark{width:36px;height:36px;border-radius:10px;background:var(--grad);display:grid;place-items:center;font:900 19px var(--fd);box-shadow:0 0 22px rgba(99,102,241,.55)}
+.lname{font:900 19px var(--fd);background:linear-gradient(90deg,#c7d2fe,#22d3ee);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.badge{font:10.5px var(--fm);color:var(--mut);border:1px solid var(--line2);padding:3px 9px;border-radius:99px;white-space:nowrap}
+.acts{margin-left:auto;display:flex;gap:8px}
+.ib{width:38px;height:38px;border-radius:10px;border:1px solid var(--line2);background:var(--s2);color:var(--mut);cursor:pointer;font-size:17px;transition:.18s}
+.ib:hover:not(:disabled){color:var(--ink);border-color:var(--cyan);box-shadow:0 0 14px rgba(34,211,238,.25)}
+.ib:disabled{opacity:.35;cursor:not-allowed}.ib.on{color:var(--cyan)}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+main{padding:calc(var(--hh) + 20px) 22px 40px;max-width:1720px;margin:0 auto;display:grid;grid-template-columns:340px minmax(0,1fr);gap:20px;align-items:start}
+.side{position:sticky;top:calc(var(--hh) + 16px);max-height:calc(100vh - var(--hh) - 32px);overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:6px}
+.card{background:linear-gradient(180deg,var(--s2),var(--s1));border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 4px 14px rgba(3,6,20,.4);animation:up .5s ease both}
+.card h3{font-size:11px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:var(--mut);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.card h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent)}
+.card h3 button{order:2;font:600 11px var(--fb);color:var(--cyan);background:none;border:1px solid var(--line2);border-radius:6px;padding:2px 8px;cursor:pointer}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--s1);border:1px solid var(--line);border-radius:11px;padding:5px}
+.seg button{border:0;border-radius:8px;padding:8px 4px;cursor:pointer;font:700 12px var(--fb);background:none;color:var(--mut);display:flex;flex-direction:column;align-items:center;transition:.18s}
+.seg small{font:10px var(--fm);opacity:.75}.seg .act{background:var(--grad);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.4)}
+.sub{font:700 12px var(--fb);color:var(--ink);margin:10px 0 6px}.sub:first-of-type{margin-top:0}
+.r3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+label.f{font:11px var(--fm);color:var(--mut)}
+input[type=number]{width:100%;margin-top:2px;padding:6px 7px;border-radius:8px;border:1px solid var(--line);background:var(--s1);color:var(--ink);font:13px var(--fm)}
+input[type=range]{width:100%;accent-color:var(--blue)}
+.btn{font:700 12.5px var(--fb);padding:8px 12px;border-radius:9px;border:1px solid var(--line2);background:var(--s1);color:var(--ink);cursor:pointer;transition:.16s}
+.btn:hover{transform:translateY(-1px);border-color:var(--cyan)}.btn.p{background:var(--grad);border-color:transparent;color:#fff}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.switch{display:flex;align-items:center;gap:10px;padding:5px 2px;cursor:pointer;font-size:13px;font-weight:600;position:relative}
+.switch input{position:absolute;opacity:0}
+.track{width:32px;height:18px;border-radius:99px;background:var(--s3);position:relative;flex-shrink:0;transition:.18s}
+.track::after{content:"";position:absolute;left:3px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--mut);transition:.18s}
+.switch input:checked+.track{background:var(--grad)}.switch input:checked+.track::after{left:17px;background:#fff}
+.switch input:focus-visible+.track{outline:2px solid var(--cyan)}.switch small{margin-left:auto;font:10px var(--fm);color:var(--mut2)}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.stage{position:relative;height:min(62vh,600px);min-height:380px;border-radius:12px;overflow:hidden;background:#080d1e}
+#cv{width:100%;height:100%;display:block;touch-action:none}
+.hud{position:absolute;left:12px;top:12px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+.chip{font:11px var(--fm);color:var(--mut);background:rgba(13,20,40,.8);border:1px solid var(--line);border-radius:99px;padding:3px 10px}.chip b{color:var(--cyan)}
+.hint{position:absolute;left:12px;bottom:10px;font-size:12px;color:var(--mut);pointer-events:none}
+.leg{position:absolute;right:12px;top:12px;font:11px var(--fm);display:flex;flex-direction:column;gap:3px;align-items:flex-end;pointer-events:none}
+.coord{position:absolute;right:12px;bottom:10px;font:11px var(--fm);color:var(--ink);background:rgba(13,20,40,.8);border:1px solid var(--line);border-radius:8px;padding:3px 10px;pointer-events:none}
+.proj{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.proj canvas{width:100%;aspect-ratio:1/1;display:block;border-radius:10px;background:#080d1e}
+.mats{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.mat{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;font:13px var(--fm)}
+.mat span{background:var(--s1);padding:7px 4px;text-align:right}.mat .z{color:var(--mut2)}.mat.sm{font-size:12px}.mat.sm span{padding:5px 4px}
+.cap{font-size:12px;color:var(--mut);margin-bottom:8px}
+.proj .cap{margin:10px 0 0}.ptitle{font:700 13px var(--fb);margin-bottom:8px}
+#vlist{max-height:240px;overflow:auto;margin-top:10px;font:12px/1.55 var(--fm);color:var(--mut);white-space:pre}
+summary{cursor:pointer;font-weight:700;font-size:13px}
+#toasts{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:90}
+.toast{background:var(--s3);border:1px solid var(--line2);border-left:3px solid var(--cyan);border-radius:10px;padding:9px 14px;font-size:13px;max-width:320px;animation:up .25s both;cursor:pointer}
+.toast.warn{border-left-color:var(--amber)}.toast.error{border-left-color:var(--red)}
+.scrim{position:fixed;inset:0;background:rgba(3,6,20,.7);display:none;place-items:center;z-index:80}.scrim.open{display:grid}
+.modal{background:var(--s2);border:1px solid var(--line2);border-radius:14px;padding:22px;width:min(480px,92vw)}
+.modal h2{font:700 17px var(--fd);margin-bottom:12px}.modal table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:14px}
+.modal td{padding:4px 0;border-bottom:1px solid var(--line)}.modal td:first-child{font-family:var(--fm);color:var(--cyan);width:90px}
+@media (max-width:1050px){main{grid-template-columns:1fr;padding-inline:12px}.side{position:static;max-height:none}.proj,.mats{grid-template-columns:1fr}.badge{display:none}}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<header>
+  <div class="logo"><div class="mark">З</div><span class="lname">Ze-Lab 3D</span><span class="badge">ЛР №6 · буква «З»</span></div>
+  <div class="acts">
+    <button class="ib on" id="bSnd" title="Звук">♪</button>
+    <button class="ib" id="bUndo" title="Отменить (Ctrl+Z)" disabled>↶</button>
+    <button class="ib" id="bHelp" title="Справка (?)">?</button>
+  </div>
+</header>
+
+<main>
+<aside class="side">
+  <div class="card"><h3>Что делает мышь</h3>
+    <div class="seg" id="seg">
+      <button data-m="cam" class="act">Камера<small>1</small></button>
+      <button data-m="rot">Вращение<small>2</small></button>
+      <button data-m="mov">Перенос<small>3</small></button>
+      <button data-m="scl">Масштаб<small>4</small></button>
+    </div>
+    <p class="cap" style="margin-top:8px" id="modeHelp"></p>
+  </div>
+
+  <div class="card"><h3>Преобразования</h3>
+    <div class="sub">Масштабирование</div>
+    <div class="r3"><label class="f">Sx<input type="number" id="sx" value="1.5" step="any"></label><label class="f">Sy<input type="number" id="sy" value="1" step="any"></label><label class="f">Sz<input type="number" id="sz" value="1" step="any"></label></div>
+    <button class="btn p" id="bScale">Применить</button>
+    <div class="sub">Перенос</div>
+    <div class="r3"><label class="f">Tx<input type="number" id="tx" value="3" step="any"></label><label class="f">Ty<input type="number" id="ty" value="0" step="any"></label><label class="f">Tz<input type="number" id="tz" value="0" step="any"></label></div>
+    <button class="btn p" id="bMove">Применить</button>
+  </div>
+
+  <div class="card"><h3>Ось вращения</h3>
+    <p class="cap">Прямая через точку P с направлением d. Перетащите угол мышью в режиме «Вращение» (Shift — шаг 15°).</p>
+    <div class="r3"><label class="f">Px<input type="number" id="px" value="0" step="any"></label><label class="f">Py<input type="number" id="py" value="0" step="any"></label><label class="f">Pz<input type="number" id="pz" value="0" step="any"></label></div>
+    <div class="r3"><label class="f">dx<input type="number" id="dx" value="0" step="any"></label><label class="f">dy<input type="number" id="dy" value="1" step="any"></label><label class="f">dz<input type="number" id="dz" value="0" step="any"></label></div>
+    <div class="btns" style="margin-bottom:10px">
+      <button class="btn" data-ax="1,0,0">X</button><button class="btn" data-ax="0,1,0">Y</button><button class="btn" data-ax="0,0,1">Z</button><button class="btn" data-ax="1,1,1">(1,1,1)</button><button class="btn" data-p="3,-5,0">P: угол</button><button class="btn" data-p="0,0,0">P: O</button>
+    </div>
+    <div class="r3" style="grid-template-columns:1fr 1fr"><label class="f">Угол, °<input type="number" id="ang" value="30" step="any"></label><label class="f">Скорость, °/с<input type="number" id="spd" value="45" step="any"></label></div>
+    <div class="btns"><button class="btn p" id="bRot">Повернуть</button><button class="btn" id="bPlay">▶ Крутить</button></div>
+  </div>
+
+  <div class="card"><h3>Вид</h3>
+    <label class="switch"><input type="checkbox" data-k="grid" checked><span class="track"></span>Сетка<small>G</small></label>
+    <label class="switch"><input type="checkbox" data-k="axes" checked><span class="track"></span>Оси и деления<small>A</small></label>
+    <label class="switch"><input type="checkbox" data-k="ghost" checked><span class="track"></span>Исходное положение<small>O</small></label>
+    <label class="switch"><input type="checkbox" data-k="shadow" checked><span class="track"></span>Тени-проекции<small>S</small></label>
+    <label class="switch"><input type="checkbox" data-k="pts"><span class="track"></span>Вершины<small>P</small></label>
+    <label class="switch"><input type="checkbox" data-k="axis" checked><span class="track"></span>Ось вращения<small>X</small></label>
+    <div class="btns" style="margin-top:10px"><button class="btn" id="bFit">Сбросить вид</button><button class="btn" id="bReset">Сбросить модель</button></div>
+  </div>
+</aside>
+
+<div class="col">
+  <div class="card"><h3>Трёхмерная сцена</h3>
+    <div class="stage" id="stage"><canvas id="cv"></canvas>
+      <div class="hud"><span class="chip">режим: <b id="hMode">Камера</b></span><span class="chip" id="hInfo" style="display:none"></span></div>
+      <div class="leg"><span style="color:var(--red)">● X</span><span style="color:var(--green)">● Y</span><span style="color:#60a5fa">● Z</span><span style="color:var(--mut)">серым — исходное</span></div>
+      <span class="hint">ЛКМ — действие по режиму · колесо — масштаб вида · 2×клик — сбросить вид</span>
+      <span class="coord" id="coord">наведите на вершину</span>
+    </div>
+  </div>
+
+  <div class="proj">
+    <div class="card"><div class="ptitle">Проекция Oxy</div><canvas id="pxy"></canvas><div class="mat sm" id="mxy"></div></div>
+    <div class="card"><div class="ptitle">Проекция Oxz</div><canvas id="pxz"></canvas><div class="mat sm" id="mxz"></div></div>
+    <div class="card"><div class="ptitle">Проекция Oyz</div><canvas id="pyz"></canvas><div class="mat sm" id="myz"></div></div>
+  </div>
+
+  <div class="mats">
+    <div class="card"><h3 id="lastT">Последняя операция</h3><div class="mat" id="mLast"></div></div>
+    <div class="card"><h3>Итоговая матрица M<button id="bCopy">копировать</button></h3><div class="mat" id="mTot"></div><p class="cap" style="margin:8px 0 0">v′ = M · v. Новая операция умножается слева.</p></div>
+  </div>
+
+  <div class="card"><details id="vdet"><summary>Массив вершин (<span id="vc">0</span>) — до и после преобразования</summary><pre id="vlist"></pre></details></div>
+</div>
+</main>
+
+<div id="toasts" aria-live="polite"></div>
+<div class="scrim" id="help"><div class="modal"><h2>Управление</h2>
+<table><tr><td>1 – 4</td><td>режим мыши: камера, вращение, перенос, масштаб</td></tr>
+<tr><td>Пробел</td><td>включить / остановить вращение</td></tr>
+<tr><td>Ctrl+Z</td><td>отменить операцию</td></tr>
+<tr><td>R · F</td><td>сбросить модель · сбросить вид</td></tr>
+<tr><td>G A O S P X</td><td>сетка, оси, исходное, тени, вершины, ось вращения</td></tr>
+<tr><td>Shift</td><td>в режиме вращения — шаг 15°</td></tr></table>
+<button class="btn p" id="bCloseHelp">Понятно</button></div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const nm=(id,d)=>{const v=parseFloat($(id).value);return isNaN(v)?d:v;};
+
+/* 1. Модель: буква «З» — массив вершин и рёбра */
+const THICK=1.5, DEPTH=2.0;
+function arc(cx,cy,rx,ry,a0,a1,n){const p=[];for(let i=0;i<=n;i++){const a=(a0+(a1-a0)*i/n)*Math.PI/180;p.push([cx+rx*Math.cos(a),cy+ry*Math.sin(a)]);}return p;}
+const vertices=[], edges=[];
+function addStroke(c){
+  const n=c.length,h=THICK/2,L=[],R=[];
+  for(let i=0;i<n;i++){
+    const a=c[Math.max(i-1,0)],b=c[Math.min(i+1,n-1)];let tx=b[0]-a[0],ty=b[1]-a[1];const l=Math.hypot(tx,ty);tx/=l;ty/=l;
+    L.push([c[i][0]-ty*h,c[i][1]+tx*h]);R.push([c[i][0]+ty*h,c[i][1]-tx*h]);
+  }
+  const poly=L.concat(R.reverse()),m=poly.length,base=vertices.length;
+  poly.forEach(p=>vertices.push([p[0],p[1],DEPTH/2]));
+  poly.forEach(p=>vertices.push([p[0],p[1],-DEPTH/2]));
+  for(let i=0;i<m;i++){const j=(i+1)%m;edges.push([base+i,base+j],[base+m+i,base+m+j],[base+i,base+m+i]);}
+}
+addStroke(arc(0,2.5,2.3,2.5,150,-100,14));
+addStroke(arc(0,-2.5,2.7,2.5,100,-150,14));
+$('vc').textContent=vertices.length;
+
+/* 2. Матрицы 4×4 (v' = M·v) */
+const ident=()=>[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]];
+function mul(A,B){const C=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];for(let i=0;i<4;i++)for(let j=0;j<4;j++)for(let k=0;k<4;k++)C[i][j]+=A[i][k]*B[k][j];return C;}
+const apply=(M,v)=>[0,1,2].map(i=>M[i][0]*v[0]+M[i][1]*v[1]+M[i][2]*v[2]+M[i][3]);
+const scaleM=(a,b,c)=>[[a,0,0,0],[0,b,0,0],[0,0,c,0],[0,0,0,1]];
+const moveM=(a,b,c)=>[[1,0,0,a],[0,1,0,b],[0,0,1,c],[0,0,0,1]];
+// вращение вокруг прямой: T(P)·R(d,θ)·T(−P), R — формула Родрига
+function rotateM(P,d,deg){
+  const l=Math.hypot(...d),x=d[0]/l,y=d[1]/l,z=d[2]/l,a=deg*Math.PI/180,c=Math.cos(a),s=Math.sin(a),t=1-c;
+  const R=[[t*x*x+c,t*x*y-s*z,t*x*z+s*y,0],[t*x*y+s*z,t*y*y+c,t*y*z-s*x,0],[t*x*z-s*y,t*y*z+s*x,t*z*z+c,0],[0,0,0,1]];
+  return mul(moveM(...P),mul(R,moveM(-P[0],-P[1],-P[2])));
+}
+const PXY=scaleM(1,1,0), PXZ=[[1,0,0,0],[0,0,0,0],[0,0,1,0],[0,0,0,1]], PYZ=[[0,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]];
+const fmt=v=>(Math.abs(v)<5e-7?0:v).toFixed(3);
+function showM(el,A){el.innerHTML='';A.forEach(r=>r.forEach(v=>{const s=document.createElement('span');s.textContent=fmt(v);if(Math.abs(v)<5e-7)s.className='z';el.appendChild(s);}));}
+
+/*3. Звук и уведомления*/
+const Sound={on:true,ctx:null,
+  unlock(){if(this.ctx)return;try{this.ctx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}},
+  beep(f,d=.06,t='sine',v=.05){if(!this.on||!this.ctx)return;try{const c=this.ctx,o=c.createOscillator(),g=c.createGain();o.type=t;o.frequency.value=f;
+    g.gain.setValueAtTime(v,c.currentTime);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+d+.02);}catch(e){}},
+  click(){this.beep(1500,.04)},ok(){this.beep(660,.1,'triangle');setTimeout(()=>this.beep(990,.12,'triangle'),70)},err(){this.beep(140,.15,'square')}};
+function toast(msg,type='info',ms=2800){
+  const b=$('toasts');while(b.children.length>=3)b.firstChild.remove();
+  const el=document.createElement('div');el.className='toast '+type;el.textContent=msg;
+  const k=()=>el.remove();el.onclick=k;b.appendChild(el);setTimeout(k,ms);if(type==='error')Sound.err();
+}
+
+/* 4. Состояние */
+let M=ident(),lastM=ident(),lastName='нет',undoSt=[],mode='cam',playing=false,dirty=true,info='',hover=-1,mouse=null,viewK=1;
+let tv=[],sp=[],dirtyP=true,dirtyM=true;
+const cam={yaw:-.6,pitch:.35,zoom:1}, tg={grid:1,axes:1,ghost:1,shadow:1,pts:0,axis:1};
+const MODES={cam:['Камера','Тяните — вращать вид. Модель не меняется.'],rot:['Вращение','Тяните влево/вправо — угол поворота вокруг заданной оси.'],
+  mov:['Перенос','Тяните — сдвиг модели в плоскости экрана.'],scl:['Масштаб','Тяните вверх/вниз — равномерное масштабирование.']};
+const tooBig=m=>vertices.some(v=>{const p=apply(m,v);return !(Math.abs(p[0])<=500&&Math.abs(p[1])<=500&&Math.abs(p[2])<=500);});
+try{const s=JSON.parse(localStorage.getItem('lab6z2'));if(s&&Array.isArray(s.M)&&s.M.length===4&&s.M.every(r=>Array.isArray(r)&&r.length===4)&&!tooBig(s.M)&&s.cam&&isFinite(s.cam.yaw+s.cam.pitch+s.cam.zoom)){M=s.M;Object.assign(cam,s.cam);}}catch(e){}
+const persist=()=>{try{localStorage.setItem('lab6z2',JSON.stringify({M,cam}));}catch(e){}};
+
+function pushUndo(){undoSt.push({M:M.map(r=>r.slice()),lastM,lastName});if(undoSt.length>60)undoSt.shift();$('bUndo').disabled=false;}
+function undo(){const s=undoSt.pop();if(!s)return;M=s.M;lastM=s.lastM;lastName=s.lastName;$('bUndo').disabled=!undoSt.length;refresh();persist();Sound.click();toast('Операция отменена','info',1500);}
+function refresh(){tv=vertices.map(v=>apply(M,v));dirty=dirtyP=dirtyM=true;}
+function updateDom(){
+  showM($('mTot'),M);showM($('mLast'),lastM);$('lastT').textContent='Последняя: '+lastName;
+  if($('vdet').open)$('vlist').textContent=vertices.map((v,i)=>String(i).padStart(3)+': ['+v.map(fmt).join(', ')+'] → ['+tv[i].map(fmt).join(', ')+']').join('\n');
+}
+function commit(op,name){const nM=mul(op,M);if(tooBig(nM)){toast('Модель ушла бы слишком далеко (>500 ед.). Нажмите «Сбросить модель».','error',3500);return;}pushUndo();M=nM;lastM=op;lastName=name;refresh();persist();Sound.click();}
+function getAxis(){const d=[nm('dx',0),nm('dy',0),nm('dz',0)];if(!Math.hypot(...d)){toast('Вектор направления оси не должен быть нулевым.','error');return null;}return{P:[nm('px',0),nm('py',0),nm('pz',0)],d};}
+
+/* 5. Отрисовка  */
+const COL={x:'#fb4d6d',y:'#34d399',z:'#60a5fa',wire:'#22d3ee',ghost:'rgba(148,163,255,.3)',grid:'rgba(148,163,255,.1)',txt:'#8b93b8',axis:'#ffb020'};
+function fit(c){
+  const r=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
+  if(c.width!==Math.round(w*r)||c.height!==Math.round(h*r)){c.width=Math.round(w*r);c.height=Math.round(h*r);}
+  const x=c.getContext('2d');x.setTransform(r,0,0,r,0,0);x.clearRect(0,0,w,h);return{ctx:x,w,h};
+}
+const cv=$('cv'),DIST=30;
+function draw3D(){
+  const{ctx,w,h}=fit(cv),F=1.1*Math.min(w,h)*cam.zoom;viewK=F/DIST;
+  const cY=Math.cos(cam.yaw),sY=Math.sin(cam.yaw),cP=Math.cos(cam.pitch),sP=Math.sin(cam.pitch);
+  const P=p=>{const x1=p[0]*cY+p[2]*sY,z1=-p[0]*sY+p[2]*cY,y2=p[1]*cP-z1*sP,z2=p[1]*sP+z1*cP,k=F/Math.max(DIST-z2,2);return[w/2+x1*k,h/2-y2*k];};
+  const ln=(a,b,c,lw,dash)=>{const A=P(a),B=P(b);ctx.strokeStyle=c;ctx.lineWidth=lw||1;ctx.setLineDash(dash||[]);ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.stroke();ctx.setLineDash([]);};
+  const batch=(pts,map,c,lw)=>{ctx.strokeStyle=c;ctx.lineWidth=lw;ctx.beginPath();for(const e of edges){const a=P(map(pts[e[0]])),b=P(map(pts[e[1]]));ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);}ctx.stroke();};
+  const id=p=>p;
+  if(tg.grid)for(let i=-10;i<=10;i+=2){ln([i,0,-10],[i,0,10],COL.grid);ln([-10,0,i],[10,0,i],COL.grid);}
+  if(tg.shadow){batch(tv,p=>[p[0],p[1],0],'rgba(96,165,250,.4)',1);batch(tv,p=>[p[0],0,p[2]],'rgba(52,211,153,.4)',1);batch(tv,p=>[0,p[1],p[2]],'rgba(251,77,109,.4)',1);}
+  if(tg.ghost)batch(vertices,id,COL.ghost,1);
+  if(tg.axes)[['x',[1,0,0]],['y',[0,1,0]],['z',[0,0,1]]].forEach(([k,d])=>{
+    const c=COL[k];ln(d.map(v=>-10*v),[0,0,0],c+'55',1.5);ln([0,0,0],d.map(v=>11*v),c,2);
+    const L=P(d.map(v=>12*v));ctx.fillStyle=c;ctx.font='700 14px Manrope,sans-serif';ctx.fillText(k.toUpperCase(),L[0]-4,L[1]+5);
+    for(let i=-10;i<=10;i++){if(!i)continue;const A=P(d.map(v=>v*i));ctx.fillStyle=c;ctx.beginPath();ctx.arc(A[0],A[1],i%5?1.4:2.5,0,7);ctx.fill();
+      if(i>0&&i%5===0){ctx.fillStyle=COL.txt;ctx.font='11px "JetBrains Mono",monospace';ctx.fillText(i,A[0]+5,A[1]+12);}}
+  });
+  if(tg.axis){const d=[nm('dx',0),nm('dy',0),nm('dz',0)],l=Math.hypot(...d);
+    if(l){const p=[nm('px',0),nm('py',0),nm('pz',0)],u=d.map(v=>v/l*12);ln(p.map((v,i)=>v-u[i]),p.map((v,i)=>v+u[i]),COL.axis,mode==='rot'?2.6:1.6,[7,5]);
+      const A=P(p);ctx.fillStyle=COL.axis;ctx.beginPath();ctx.arc(A[0],A[1],4,0,7);ctx.fill();}}
+  batch(tv,id,COL.wire,1.6);
+  sp=tv.map(P);
+  if(tg.pts){ctx.fillStyle=COL.wire;sp.forEach(a=>{ctx.beginPath();ctx.arc(a[0],a[1],2,0,7);ctx.fill();});}
+  if(hover>=0){const a=sp[hover];ctx.strokeStyle='#fff';ctx.fillStyle='rgba(255,255,255,.2)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(a[0],a[1],7,0,7);ctx.fill();ctx.stroke();}
+}
+function drawProj(id,ha,va,nms,cols){
+  const{ctx,w,h}=fit($(id));let mx=8;
+  tv.concat(vertices).forEach(p=>{mx=Math.max(mx,Math.abs(p[ha]),Math.abs(p[va]));});
+  const R=Math.ceil(mx*1.12),st=R>14?5:R>8?2:1,s=Math.min(w,h)/2*.86/R,cx=w/2,cy=h/2,X=v=>cx+v*s,Y=v=>cy-v*s;
+  const sg=(a,b,c,d,col,lw)=>{ctx.strokeStyle=col;ctx.lineWidth=lw||1;ctx.beginPath();ctx.moveTo(a,b);ctx.lineTo(c,d);ctx.stroke();};
+  ctx.font='10px "JetBrains Mono",monospace';
+  for(let i=-R;i<=R;i+=st){sg(X(i),Y(-R),X(i),Y(R),COL.grid);sg(X(-R),Y(i),X(R),Y(i),COL.grid);if(i){ctx.fillStyle=COL.txt;ctx.fillText(i,X(i)-4,cy+12);ctx.fillText(i,cx+5,Y(i)+4);}}
+  sg(X(-R),cy,X(R),cy,cols[0],1.8);sg(cx,Y(-R),cx,Y(R),cols[1],1.8);
+  ctx.font='700 13px Manrope,sans-serif';ctx.fillStyle=cols[0];ctx.fillText(nms[0],X(R)-12,cy-8);ctx.fillStyle=cols[1];ctx.fillText(nms[1],cx+8,Y(R)+12);
+  const dr=(pts,c,lw)=>{ctx.strokeStyle=c;ctx.lineWidth=lw;ctx.beginPath();for(const e of edges){const a=pts[e[0]],b=pts[e[1]];ctx.moveTo(X(a[ha]),Y(a[va]));ctx.lineTo(X(b[ha]),Y(b[va]));}ctx.stroke();};
+  if(tg.ghost)dr(vertices,COL.ghost,1);dr(tv,COL.wire,1.4);
+  if(hover>=0){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(X(tv[hover][ha]),Y(tv[hover][va]),4,0,7);ctx.fill();}
+}
+function drawAll(){draw3D();drawProj('pxy',0,1,['x','y'],[COL.x,COL.y]);drawProj('pxz',0,2,['x','z'],[COL.x,COL.z]);drawProj('pyz',1,2,['y','z'],[COL.y,COL.z]);}
+
+/*  6. Мышь: действие зависит от режима */
+let drag=null;
+function setMode(m){
+  mode=m;document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('act',b.dataset.m===m));
+  $('hMode').textContent=MODES[m][0];$('modeHelp').textContent=MODES[m][1];cv.style.cursor=m==='cam'?'grab':'crosshair';info='';$('hInfo').style.display='none';dirty=true;Sound.click();
+}
+function setInfo(t){info=t;$('hInfo').style.display=t?'':'none';$('hInfo').innerHTML=t;}
+cv.addEventListener('pointerdown',e=>{
+  if(e.button)return;Sound.unlock();cv.setPointerCapture(e.pointerId);
+  drag={x:e.clientX,y:e.clientY,x0:e.clientX,y0:e.clientY,M0:M,mode};
+  if(mode!=='cam')pushUndo();
+});
+cv.addEventListener('pointermove',e=>{
+  const r=cv.getBoundingClientRect();mouse={x:e.clientX-r.left,y:e.clientY-r.top};
+  if(!drag){ // наведение на вершину
+    let best=-1,bd=100;sp.forEach((a,i)=>{const d=(a[0]-mouse.x)**2+(a[1]-mouse.y)**2;if(d<bd){bd=d;best=i;}});
+    if(best!==hover){hover=best;dirty=dirtyP=true;$('coord').textContent=best<0?'наведите на вершину':'v'+best+' ['+vertices[best].map(fmt).join(', ')+'] → ['+tv[best].map(fmt).join(', ')+']';}
+    return;
+  }
+  const dx=e.clientX-drag.x0,dy=e.clientY-drag.y0;
+  if(drag.mode==='cam'){cam.yaw+=(e.clientX-drag.x)*.008;cam.pitch=Math.max(-1.5,Math.min(1.5,cam.pitch+(e.clientY-drag.y)*.008));drag.x=e.clientX;drag.y=e.clientY;dirty=true;return;}
+  let op;
+  if(drag.mode==='rot'){const ax=getAxis();if(!ax)return;let a=dx*.6;if(e.shiftKey)a=Math.round(a/15)*15;op=rotateM(ax.P,ax.d,a);lastName='вращение';setInfo('угол <b>'+a.toFixed(1)+'°</b>');}
+  else if(drag.mode==='mov'){ // экранный сдвиг → мировой вектор (обратный поворот камеры)
+    const u=dx/viewK,v=-dy/viewK,cY=Math.cos(cam.yaw),sY=Math.sin(cam.yaw),cP=Math.cos(cam.pitch),sP=Math.sin(cam.pitch);
+    const y1=v*cP,z1=-v*sP,wx=u*cY-z1*sY,wz=u*sY+z1*cY;op=moveM(wx,y1,wz);lastName='перенос';
+    setInfo('Δ <b>'+[wx,y1,wz].map(q=>q.toFixed(1)).join(', ')+'</b>');}
+  else{const f=Math.exp(-dy*.006);op=scaleM(f,f,f);lastName='масштабирование';setInfo('коэфф. <b>×'+f.toFixed(2)+'</b>');}
+  const nM=mul(op,drag.M0);if(tooBig(nM))return;M=nM;lastM=op;refresh();
+});
+const endDrag=()=>{if(!drag)return;if(drag.mode!=='cam')Sound.click();drag=null;setInfo('');persist();};
+cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
+cv.addEventListener('pointerleave',()=>{if(!drag){hover=-1;mouse=null;dirty=dirtyP=true;$('coord').textContent='наведите на вершину';}});
+cv.addEventListener('wheel',e=>{e.preventDefault();cam.zoom=Math.max(.3,Math.min(4,cam.zoom*Math.exp(-e.deltaY*.0015)));dirty=true;},{passive:false});
+const fitView=()=>{cam.yaw=-.6;cam.pitch=.35;cam.zoom=1;dirty=true;persist();};
+cv.addEventListener('dblclick',fitView);
+
+/* 7. Кнопки, переключатели, клавиатура */
+document.querySelectorAll('#seg button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+$('bScale').onclick=()=>{const s=[nm('sx',1),nm('sy',1),nm('sz',1)];if(s.includes(0)){toast('Коэффициент масштаба не должен быть равен нулю.','error');return;}commit(scaleM(...s),'масштабирование');};
+$('bMove').onclick=()=>commit(moveM(nm('tx',0),nm('ty',0),nm('tz',0)),'перенос');
+$('bRot').onclick=()=>{const a=getAxis();if(a)commit(rotateM(a.P,a.d,nm('ang',0)),'вращение');};
+function setPlay(on){
+  if(on&&!getAxis())return;
+  playing=on;$('bPlay').textContent=on?'❚❚ Стоп':'▶ Крутить';
+  if(on){pushUndo();Sound.ok();}else{persist();Sound.click();}
+}
+$('bPlay').onclick=()=>setPlay(!playing);
+document.querySelectorAll('[data-ax]').forEach(b=>b.onclick=()=>{const v=b.dataset.ax.split(',');['dx','dy','dz'].forEach((id,i)=>$(id).value=v[i]);dirty=true;Sound.click();});
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const v=b.dataset.p.split(',');['px','py','pz'].forEach((id,i)=>$(id).value=v[i]);dirty=true;Sound.click();});
+document.querySelectorAll('input[type=number]').forEach(i=>i.addEventListener('input',()=>dirty=true));
+document.querySelectorAll('[data-k]').forEach(c=>c.onchange=()=>{tg[c.dataset.k]=c.checked?1:0;dirty=dirtyP=true;Sound.click();});
+function resetModel(){pushUndo();M=ident();lastM=ident();lastName='сброс';refresh();persist();Sound.click();toast('Модель возвращена в исходное положение','info',1800);}
+$('bReset').onclick=resetModel;$('bFit').onclick=fitView;$('bUndo').onclick=undo;
+$('bCopy').onclick=()=>{const t=M.map(r=>r.map(fmt).join('\t')).join('\n');
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Матрица скопирована','success'),()=>toast('Не удалось скопировать','warn'));};
+$('bSnd').onclick=()=>{Sound.unlock();Sound.on=!Sound.on;$('bSnd').classList.toggle('on',Sound.on);$('bSnd').textContent=Sound.on?'♪':'✕';if(Sound.on)Sound.click();};
+const openHelp=()=>$('help').classList.add('open'),closeHelp=()=>$('help').classList.remove('open');
+$('bHelp').onclick=openHelp;$('bCloseHelp').onclick=closeHelp;$('help').onclick=e=>{if(e.target===$('help'))closeHelp();};
+$('vdet').addEventListener('toggle',refresh);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeHelp();return;}
+  if(/^(INPUT|TEXTAREA)$/.test(e.target.tagName))return;
+  if((e.ctrlKey||e.metaKey)&&e.code==='KeyZ'){e.preventDefault();undo();return;}
+  const tgK={KeyG:'grid',KeyA:'axes',KeyO:'ghost',KeyS:'shadow',KeyP:'pts',KeyX:'axis'}[e.code];
+  if(tgK){document.querySelector('[data-k='+tgK+']').click();return;}
+  if(e.code==='Digit1')setMode('cam');else if(e.code==='Digit2')setMode('rot');else if(e.code==='Digit3')setMode('mov');else if(e.code==='Digit4')setMode('scl');
+  else if(e.code==='Space'){e.preventDefault();setPlay(!playing);}
+  else if(e.code==='KeyR')resetModel();else if(e.code==='KeyF')fitView();else if(e.key==='?'||e.code==='Slash')openHelp();
+});
+const all=()=>{dirty=dirtyP=true;};new ResizeObserver(all).observe($('stage'));window.addEventListener('resize',all);
+
+/* 8. Главный цикл */
+let tPrev=performance.now();
+function frame(t){
+  const dt=Math.min(.05,(t-tPrev)/1000);tPrev=t;
+  if(playing&&!drag){const a=getAxis();if(a){const op=rotateM(a.P,a.d,nm('spd',45)*dt);M=mul(op,M);lastM=op;lastName='вращение (анимация)';refresh();}else setPlay(false);}
+  if(dirtyM){dirtyM=false;updateDom();}
+  if(dirty){dirty=false;draw3D();}
+  if(dirtyP){dirtyP=false;drawProj('pxy',0,1,['x','y'],[COL.x,COL.y]);drawProj('pxz',0,2,['x','z'],[COL.x,COL.z]);drawProj('pyz',1,2,['y','z'],[COL.y,COL.z]);}
+  requestAnimationFrame(frame);
+}
+showM($('mxy'),PXY);showM($('mxz'),PXZ);showM($('myz'),PYZ);
+setMode('cam');refresh();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
